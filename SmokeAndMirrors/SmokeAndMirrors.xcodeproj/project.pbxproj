@@ -7,11 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */ = {isa = PBXBuildFile; fileRef = 716A1CBA22C2683E002BA968 /* RDSmoke.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */ = {isa = PBXBuildFile; fileRef = 716A1CBB22C2683E002BA968 /* RDSmoke.mm */; };
 		7194C17922C2564E001E9656 /* SmokeAndMirrors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */; };
 		7194C17E22C2564E001E9656 /* SmokeAndMirrorsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 7194C17D22C2564E001E9656 /* SmokeAndMirrorsTests.m */; };
 		7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7194C17222C2564D001E9656 /* SmokeAndMirrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7194C18C22C25A02001E9656 /* RDMirror.h in Headers */ = {isa = PBXBuildFile; fileRef = 7194C18A22C25A02001E9656 /* RDMirror.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7194C18D22C25A02001E9656 /* RDMirror.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7194C18B22C25A02001E9656 /* RDMirror.mm */; };
+		71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */; };
+		71D06DAB22C2B35000568CAE /* RDType.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA922C2B35000568CAE /* RDType.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		71D06DAC22C2B35000568CAE /* RDType.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71D06DAA22C2B35000568CAE /* RDType.mm */; };
+		71D06DAE22C2B4F500568CAE /* RDCommon.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DAD22C2B4F500568CAE /* RDCommon.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,6 +31,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		716A1CBA22C2683E002BA968 /* RDSmoke.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDSmoke.h; sourceTree = "<group>"; };
+		716A1CBB22C2683E002BA968 /* RDSmoke.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDSmoke.mm; sourceTree = "<group>"; };
 		7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SmokeAndMirrors.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7194C17222C2564D001E9656 /* SmokeAndMirrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmokeAndMirrors.h; sourceTree = "<group>"; };
 		7194C17322C2564D001E9656 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -33,6 +41,10 @@
 		7194C17F22C2564E001E9656 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7194C18A22C25A02001E9656 /* RDMirror.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDMirror.h; sourceTree = "<group>"; };
 		7194C18B22C25A02001E9656 /* RDMirror.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDMirror.mm; sourceTree = "<group>"; };
+		71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDMirrorPrivate.h; sourceTree = "<group>"; };
+		71D06DA922C2B35000568CAE /* RDType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDType.h; sourceTree = "<group>"; };
+		71D06DAA22C2B35000568CAE /* RDType.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDType.mm; sourceTree = "<group>"; };
+		71D06DAD22C2B4F500568CAE /* RDCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDCommon.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,8 +106,14 @@
 		7194C18922C25995001E9656 /* SmokeAndMirrors */ = {
 			isa = PBXGroup;
 			children = (
+				71D06DAD22C2B4F500568CAE /* RDCommon.h */,
 				7194C18A22C25A02001E9656 /* RDMirror.h */,
 				7194C18B22C25A02001E9656 /* RDMirror.mm */,
+				71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */,
+				71D06DA922C2B35000568CAE /* RDType.h */,
+				71D06DAA22C2B35000568CAE /* RDType.mm */,
+				716A1CBA22C2683E002BA968 /* RDSmoke.h */,
+				716A1CBB22C2683E002BA968 /* RDSmoke.mm */,
 			);
 			path = SmokeAndMirrors;
 			sourceTree = "<group>";
@@ -107,8 +125,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */,
+				71D06DAB22C2B35000568CAE /* RDType.h in Headers */,
 				7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */,
+				71D06DAE22C2B4F500568CAE /* RDCommon.h in Headers */,
 				7194C18C22C25A02001E9656 /* RDMirror.h in Headers */,
+				71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -210,6 +232,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7194C18D22C25A02001E9656 /* RDMirror.mm in Sources */,
+				71D06DAC22C2B35000568CAE /* RDType.mm in Sources */,
+				716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
