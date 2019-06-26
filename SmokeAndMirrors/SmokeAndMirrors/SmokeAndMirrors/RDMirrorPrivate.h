@@ -86,4 +86,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+@interface RDBlock()
+
+- (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
+- (instancetype)initWithKind:(RDBlockKind)kind
+                     inSmoke:(RDSmoke *)smoke
+                        clss:(RDClass *)clss
+                        size:(size_t)size
+                   signature:(RDMethodSignature *)signature NS_DESIGNATED_INITIALIZER;
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 NS_ASSUME_NONNULL_END

@@ -40,4 +40,11 @@
     }];
 }
 
+- (void)test {
+    RDSmoke *smoke = [RDSmoke new];
+    //object_getClass(^{ NSLog(@"%p", self); })
+    RDBlock *cls = [smoke mirrorForObjcBlock:[^id (id _){ return nil; } copy]];
+    NSLog(@"%@", cls);
+}
+
 @end

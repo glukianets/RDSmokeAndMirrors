@@ -299,4 +299,73 @@ RD_FINAL_CLASS
     }];
 }
 
+- (RDBlock *)mirrorForObjcBlock:(id)block {
+    NSCParameterAssert(block);
+
+    // https://clang.llvm.org/docs/Block-ABI-Apple.html
+    typedef enum RDBlockInfoFlags : int {
+        RDBlockInfoFlagHasCopyDispose   = (1 << 25),
+        RDBlockInfoFlagHasConstructor   = (1 << 26),
+        RDBlockInfoFlagIsGlobal         = (1 << 28),
+        RDBlockInfoFlagHasStret         = (1 << 29),
+        RDBlockInfoFlagHasSignature     = (1 << 30),
+    } RDBlockInfoFlags;
+    
+    typedef struct RDBlockDescriptor {
+        unsigned long int reserved;
+        unsigned long int size;
+        void (*copy_helper)(void *dst, void *src);     // if RDBlockInfoFlagHasCopyDispose
+        void (*dispose_helper)(void *src);             // if RDBlockInfoFlagHasCopyDispose
+        const char *signature;                         // if RDBlockInfoFlagHasSignature
+    } RDBlockDescriptor;
+    
+    typedef struct RDBlockInfo {
+        void *isa;
+        RDBlockInfoFlags flags;
+        int reserved;
+        void (*invoke)(void *, ...);
+        RDBlockDescriptor *descriptor;
+    } RDBlockInfo;
+
+    RDBlockInfo *blockInfo = (__bridge RDBlockInfo *)block;
+    RDBlockInfoFlags flags = blockInfo->flags;
+    RDBlockDescriptor *descriptor = blockInfo->descriptor;
+    
+    RDMethodSignature *signature = ({
+        const char *signature = NULL;
+        if (flags & RDBlockInfoFlagHasSignature) {
+            char *signaturePtr = (char *)blockInfo->descriptor;
+            signaturePtr += sizeof(blockInfo->descriptor->reserved);
+            signaturePtr += sizeof(blockInfo->descriptor->size);
+            
+            if (flags & RDBlockInfoFlagHasCopyDispose) {
+                signaturePtr += sizeof(blockInfo->descriptor->copy_helper);
+                signaturePtr += sizeof(blockInfo->descriptor->dispose_helper);
+            }
+            
+            signature = *(const char **)signaturePtr;
+        }
+        [RDMethodSignature signatureWithObjcTypeEncoding:signature];
+    });
+    
+    RDBlockKind kind = ({
+        RDBlockKind kind;
+        if (flags & RDBlockInfoFlagIsGlobal)
+            kind = RDBlockKindGlobal;
+        else if ([block isKindOfClass:NSClassFromString(@"__NSMallocBlock")])
+            kind = RDBlockKindMalloc;
+        else
+            kind = RDBlockKindStack;
+        kind;
+    });
+    
+    RDClass *cls = [self mirrorForObjcClass:object_getClass(block)];
+    
+    return [[RDBlock alloc] initWithKind:kind
+                                 inSmoke:self
+                                    clss:cls
+                                    size:descriptor->size
+                               signature:signature];
+}
+
 @end

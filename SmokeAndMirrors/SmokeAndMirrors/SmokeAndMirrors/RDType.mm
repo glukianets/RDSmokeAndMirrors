@@ -383,7 +383,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 - (NSString *)description {
     NSString *attrs = self.attributes.count > 0 ? [[self.attributes.array componentsJoinedByString:@" "] stringByAppendingString:@" "] : @"";
-    return [NSString stringWithFormat:@"(%@%@)", attrs, self.type.description ?: @""];
+    return [attrs stringByAppendingString:self.type.description ?: @""];
 }
 
 @end

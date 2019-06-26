@@ -4,15 +4,8 @@
 #import "RDCommon.h"
 
 NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstanceLevel);
+NSString *blockString(NSString *name, RDMethodSignature *signature);
 NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL isInstanceLevel);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,10 +83,13 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
     NSString *methods = self.methods.count == 0 ? @"" : ({
         [[self.methods componentsJoinedByString:@"\n"] stringByAppendingString:@"\n\n"];
     });
+    NSString *super = ({
+        self.super ? [NSString stringWithFormat:@" : %@", self.super.name] : @"";
+    });
     
-    return [NSString stringWithFormat:@"@interface %@ : %@%@%@%@%@@end",
+    return [NSString stringWithFormat:@"@interface %@%@%@%@%@%@@end",
             self.name,
-            self.super.name,
+            super,
             protocols,
             ivars,
             properties,
@@ -343,6 +339,62 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+@interface RDBlock()
+
+@end
+
+@implementation RDBlock
+
+- (instancetype)initWithKind:(RDBlockKind)kind
+                     inSmoke:(RDSmoke *)smoke
+                        clss:(RDClass *)clss
+                        size:(size_t)size
+                   signature:(RDMethodSignature *)signature
+{
+    self = [super initWithSmoke:smoke];
+    if (self) {
+        _kind = kind;
+        _clss = clss;
+        _size = size;
+        _signature = signature;
+    }
+    return self;
+}
+
+- (NSString *)description {
+    return blockString([self.class nameForKind:self.kind], self.signature);
+}
+
++ (NSString *)nameForKind:(RDBlockKind)kind {
+    switch (kind) {
+        case RDBlockKindGlobal:
+            return @"globalBlock";
+        case RDBlockKindStack:
+            return @"stackBlock";
+        case RDBlockKindMalloc:
+            return @"mallocBlock";
+    }
+}
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+NSString *blockString(NSString *name, RDMethodSignature *signature) {
+    NSString *returnType = signature.returnValue.description ?: @"";
+    NSString *body = ({
+        NSString *arguments = [map_nn(signature.arguments, ^NSString *(RDMethodArgument *arg) {
+            return arg.description ?: nil;
+        }) componentsJoinedByString:@", "];
+        [NSString stringWithFormat:@"(%@)", arguments];
+    });
+    return [NSString stringWithFormat:@"^%@%@;", returnType, body];
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstanceLevel) {
     NSString *returnType = signature.returnValue.description ?: @"()";
     NSString *body = ({
@@ -353,13 +405,17 @@ NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstan
         } else {
             NSArray<RDMethodArgument *> *arguments = [signature.arguments subarrayWithRange:NSMakeRange(2, signature.arguments.count - 2)];
             body = [zip(^NSString *(NSString *name, RDMethodArgument *argument) {
-                return [name stringByAppendingFormat:@":%@arg%d", argument.description ?: @"", 1];
+                NSString *argdesc = argument.description;
+                argdesc = argdesc ? [NSString stringWithFormat:@"(%@)", argdesc] : @"";
+                return [name stringByAppendingFormat:@":%@arg%d", argdesc, 1];
             }, nameParts, arguments) componentsJoinedByString:@" "];
         }
         body;
     });
     return [NSString stringWithFormat:@"%c %@%@;", isInstanceLevel ? '-' : '+' , returnType, body];
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL isInstanceLevel) {
     NSMutableArray<NSString *> *attributeStrings = map_nn(signature.attributes, ^NSString *(RDPropertyAttribute *attribute) {
