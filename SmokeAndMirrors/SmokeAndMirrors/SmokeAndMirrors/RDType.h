@@ -80,10 +80,18 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+extern size_t const RDTypeSizeUnknown;
+extern size_t const RDTypeAlignmentUnknown;
+
 @interface RDType : NSObject
 
 + (nullable instancetype)typeWithObjcTypeEncoding:(const char *)types;
++ (instancetype)new NS_UNAVAILABLE;
 
+@property (nonatomic, readonly) size_t size;
+@property (nonatomic, readonly) size_t alignment;
+
+- (instancetype)init NS_UNAVAILABLE;
 - (NSString *_Nullable)format;
 - (NSString*)description;
 
@@ -145,7 +153,7 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDArrayType : RDType
-@property (nonatomic, readonly) NSUInteger size;
+@property (nonatomic, readonly) NSUInteger count;
 @property (nonatomic, readonly, nullable) RDType *type;
 @end
 
@@ -153,6 +161,7 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 
 @interface RDField : NSObject
 @property (nonatomic, readonly) NSString *name;
+@property (nonatomic, readonly) size_t offset;
 @property (nonatomic, readonly, nullable) RDType *type;
 @end
 

@@ -3,6 +3,10 @@
 
 #include <initializer_list>
 #include <algorithm>
+#include <utility>
+
+size_t const RDTypeSizeUnknown = (size_t)0 - 1;
+size_t const RDTypeAlignmentUnknown = (size_t)0 - 2;
 
 static size_t parseCountSucceded = 0;
 static size_t parseCountFailed = 0;
@@ -34,6 +38,15 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return parseType(&encoding);
 }
 
+- (instancetype)initWithByteSize:(size_t)size alignment:(size_t)alignment {
+    self = [super init];
+    if (self) {
+        _size = size;
+        _alignment = alignment;
+    }
+    return self;
+}
+
 - (NSString *)description {
     return [[NSString stringWithFormat:self.format ?: @"%@", @""] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
 }
@@ -48,6 +61,15 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 @implementation RDUnknownType
 
++ (instancetype)instance {
+    static RDUnknownType *instance;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[RDUnknownType alloc] initWithByteSize:RDTypeSizeUnknown alignment:RDTypeAlignmentUnknown];
+    });
+    return instance;
+}
+
 - (NSString *)format {
     return @"? %@";
 }
@@ -58,12 +80,45 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 @implementation RDPrimitiveType : RDType
 
-- (instancetype)initWithKind:(RDPrimitiveTypeKind)size {
-    self = [super init];
+- (instancetype)initWithKind:(RDPrimitiveTypeKind)kind {
+    std::pair<size_t, size_t> sizeAndAlignement = [self.class sizeAndAlignmentForKind:kind];
+    self = [super initWithByteSize:sizeAndAlignement.first alignment:sizeAndAlignement.second];
     if (self) {
-        _kind = size;
+        _kind = kind;
     }
     return self;
+}
+
++ (instancetype)instanceWithKind:(RDPrimitiveTypeKind)kind {
+    static NSDictionary *instances;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instances = @{
+            @(RDPrimitiveTypeKindUnknown):          [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnknown],
+            @(RDPrimitiveTypeKindVoid):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindVoid],
+            @(RDPrimitiveTypeKindClass):            [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindClass],
+            @(RDPrimitiveTypeKindSelector):         [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindSelector],
+            @(RDPrimitiveTypeKindAtom):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindAtom],
+            @(RDPrimitiveTypeKindCString):          [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindCString],
+            @(RDPrimitiveTypeKindChar):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindChar],
+            @(RDPrimitiveTypeKindUnsignedChar):     [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedChar],
+            @(RDPrimitiveTypeKindBool):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindBool],
+            @(RDPrimitiveTypeKindShort):            [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindShort],
+            @(RDPrimitiveTypeKindUnsignedShort):    [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedShort],
+            @(RDPrimitiveTypeKindInt):              [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindInt],
+            @(RDPrimitiveTypeKindUnsignedInt):      [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedInt],
+            @(RDPrimitiveTypeKindLong):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindLong],
+            @(RDPrimitiveTypeKindUnsignedLong):     [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedLong],
+            @(RDPrimitiveTypeKindLongLong):         [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindLongLong],
+            @(RDPrimitiveTypeKindUnsignedLongLong): [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedLongLong],
+            @(RDPrimitiveTypeKindInt128):           [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindInt128],
+            @(RDPrimitiveTypeKindUnsignedInt128):   [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedInt128],
+            @(RDPrimitiveTypeKindFloat):            [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindFloat],
+            @(RDPrimitiveTypeKindDouble):           [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindDouble],
+            @(RDPrimitiveTypeKindLongDouble):       [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindLongDouble],
+        };
+    });
+    return instances[@(kind)];
 }
 
 - (NSString *)format {
@@ -114,6 +169,54 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     }
 }
 
++ (std::pair<size_t, size_t>)sizeAndAlignmentForKind:(RDPrimitiveTypeKind)kind {
+    switch (kind) {
+        case RDPrimitiveTypeKindUnknown:
+            return { 0, 0 };
+        case RDPrimitiveTypeKindVoid:
+            return { 0, 0 };
+        case RDPrimitiveTypeKindClass:
+            return { sizeof(Class), alignof(Class) };
+        case RDPrimitiveTypeKindSelector:
+            return { sizeof(SEL), alignof(SEL) };
+        case RDPrimitiveTypeKindCString:
+        case RDPrimitiveTypeKindAtom:
+            return { sizeof(const char *), alignof(const char *) };
+        case RDPrimitiveTypeKindChar:
+            return { sizeof(char), alignof(char) };
+        case RDPrimitiveTypeKindUnsignedChar:
+            return { sizeof(unsigned char), alignof(unsigned char) };
+        case RDPrimitiveTypeKindBool:
+            return { sizeof(bool), alignof(bool) };
+        case RDPrimitiveTypeKindShort:
+            return { sizeof(short), alignof(short) };
+        case RDPrimitiveTypeKindUnsignedShort:
+            return { sizeof(unsigned short), alignof(unsigned short) };
+        case RDPrimitiveTypeKindInt:
+            return { sizeof(int), alignof(int) };
+        case RDPrimitiveTypeKindUnsignedInt:
+            return { sizeof(unsigned int), alignof(unsigned int) };
+        case RDPrimitiveTypeKindLong:
+            return { sizeof(long), alignof(long) };
+        case RDPrimitiveTypeKindUnsignedLong:
+            return { sizeof(unsigned long), alignof(unsigned long) };
+        case RDPrimitiveTypeKindLongLong:
+            return { sizeof(long long), alignof(long long) };
+        case RDPrimitiveTypeKindUnsignedLongLong:
+            return { sizeof(unsigned long long), alignof(unsigned long long) };
+        case RDPrimitiveTypeKindInt128:
+            return { sizeof(__int128_t), alignof(__int128_t) };
+        case RDPrimitiveTypeKindUnsignedInt128:
+            return { sizeof(__int128_t), alignof(__int128_t) };
+        case RDPrimitiveTypeKindFloat:
+            return { sizeof(float), alignof(float) };
+        case RDPrimitiveTypeKindDouble:
+            return { sizeof(double), alignof(double) };
+        case RDPrimitiveTypeKindLongDouble:
+            return { sizeof(long double), alignof(long double) };
+    }
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +224,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDObjectType
 
 - (instancetype)initWithClassName:(NSString *)cls protocolNames:(NSArray<NSString *> *)protocols {
-    self = [super init];
+    self = [super initWithByteSize:sizeof(id) alignment:alignof(id)];
     if (self) {
         _className = cls.copy;
         _protocolNames = protocols.copy;
@@ -141,6 +244,11 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 @implementation RDBlockType
 
+- (instancetype)initWithArgumentString:(NSString *)string {
+    self = [super initWithByteSize:sizeof(void (^)(void)) alignment:alignof(void (^)(void))];
+    return self;
+}
+
 - (NSString *)format {
     return @"void (^%@)(...)";
 }
@@ -152,7 +260,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDPointerType
 
 - (instancetype)initWithPointeeType:(RDType *)type {
-    self = [super init];
+    self = [super initWithByteSize:sizeof(void *) alignment:alignof(void *)];
     if (self) {
         _type = type;
     }
@@ -173,7 +281,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDConstType
 
 - (instancetype)initWithType:(RDType *)type {
-    self = [super init];
+    self = [super initWithByteSize:type.size alignment:type.alignment];
     if (self) {
         _type = type;
     }
@@ -194,7 +302,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDAtomicType
 
 - (instancetype)initWithType:(RDType *)type {
-    self = [super init];
+    self = [super initWithByteSize:type.size alignment:type.alignment]; // is this assumption safe?
     if (self) {
         _type = type;
     }
@@ -215,7 +323,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDComplexType
 
 - (instancetype)initWithType:(RDType *)type {
-    self = [super init];
+    self = [super initWithByteSize:type.size * 2 alignment:type.alignment];
     if (self) {
         _type = type;
     }
@@ -236,7 +344,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDBitfieldType
 
 - (instancetype)initWithSizeInBits:(NSUInteger)size {
-    self = [super init];
+    self = [super initWithByteSize:RDTypeSizeUnknown alignment:alignof(unsigned int)];
     if (self) {
         _bitsize = size;
     }
@@ -253,10 +361,11 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 @implementation RDArrayType
 
-- (instancetype)initWithSize:(NSUInteger)size elementsOfType:(RDType *)type {
-    self = [super init];
+- (instancetype)initWithCount:(NSUInteger)count elementsOfType:(RDType *)type {
+    type = type ?: [[RDPointerType alloc] initWithPointeeType:[RDPrimitiveType instanceWithKind:RDPrimitiveTypeKindVoid]];
+    self = [super initWithByteSize:type.size * count alignment:type.alignment];
     if (self) {
-        _size = size;
+        _count = count;
         _type = type;
     }
     return self;
@@ -291,6 +400,10 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
         return self.name ?: @"_";
 }
 
+- (void)setOffset:(size_t)offset {
+    _offset = offset;
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -298,7 +411,24 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDStructType
 
 - (instancetype)initWithName:(NSString *)name fields:(NSArray<RDField *> *)fields {
-    self = [super init];
+    size_t offset = 0;
+    size_t alignment = 0;
+    for (RDField *field in fields) {
+        size_t falignment = field.type.alignment;
+        size_t fsize = field.type.size;
+        if (falignment == 0 || falignment == RDTypeAlignmentUnknown || fsize == 0 || fsize == RDTypeSizeUnknown) {
+            offset = RDTypeSizeUnknown;
+            alignment = RDTypeAlignmentUnknown;
+            break;
+        }
+        while (offset % falignment != 0)
+            ++offset;
+        field.offset = offset;
+        offset += field.type.size;
+        alignment = MAX(falignment, alignment);
+    }
+
+    self = [super initWithByteSize:MAX(1, offset) alignment:MAX(1, alignment)];
     if (self) {
         _name = name.copy;
         _fields = fields.copy;
@@ -310,7 +440,6 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return [NSString stringWithFormat:@"struct %@ { %@ } %%@", self.name ?: @"", [self.fields componentsJoinedByString:@" "]];
 }
 
-
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -318,7 +447,15 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDUnionType
 
 - (instancetype)initWithName:(NSString *)name fields:(NSArray<RDField *> *)fields {
-    self = [super init];
+    size_t size = 1;
+    size_t alignment = 1;
+    for (RDField *field in fields) {
+        size = MAX(field.type.size, size);
+        alignment = MAX(field.type.alignment, alignment);
+        field.offset = 0u;
+    }
+    
+    self = [super initWithByteSize:size alignment:alignment];
     if (self) {
         _name = name.copy;
         _fields = fields.copy;
@@ -536,15 +673,16 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
             case RDPrimitiveTypeKindCString:
             case RDPrimitiveTypeKindAtom:
             case RDPrimitiveTypeKindUnknown: {
-                return [[RDPrimitiveType alloc] initWithKind:(RDPrimitiveTypeKind)*((*encoding)++)];
+                return [RDPrimitiveType instanceWithKind:(RDPrimitiveTypeKind)*((*encoding)++)];
             }
                 
             case RDCompositeTypeKindObject: {
                 ++(*encoding);
                 if (**encoding == RDPrimitiveTypeKindUnknown) {
+                    NSString *args = nil;
                     if (*(++(*encoding)) == RDTypeEncodingSymbolBlockArgsBegin)
-                        parseString(encoding, RDTypeEncodingSymbolBlockArgsEnd);
-                    return [[RDBlockType alloc] init];
+                        args = parseString(encoding, RDTypeEncodingSymbolBlockArgsEnd);
+                    return [[RDBlockType alloc] initWithArgumentString:args];
                 }
                 NSCharacterSet *separators = [NSCharacterSet characterSetWithCharactersInString:@"<>"];
                 NSArray<NSString *> *components = [parseQuotedString(encoding) componentsSeparatedByCharactersInSet:separators];
@@ -600,7 +738,7 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 ++(*encoding);
                 NSUInteger size = parseNumber(encoding);
                 if (**encoding == RDTypeEncodingSymbolArrayEnd && ++(*encoding))
-                    return [[RDArrayType alloc] initWithSize:size elementsOfType:nil];
+                    return [[RDArrayType alloc] initWithCount:size elementsOfType:nil];
                 
                 RDType *type = parseType(encoding);
                 if (type == nil)
@@ -609,7 +747,7 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 if (*((*encoding)++) != RDTypeEncodingSymbolArrayEnd)
                     return nil;
                 
-                return [[RDArrayType alloc] initWithSize:size elementsOfType:type];
+                return [[RDArrayType alloc] initWithCount:size elementsOfType:type];
             }
                 
             case RDTypeEncodingSymbolUnionBegin:
