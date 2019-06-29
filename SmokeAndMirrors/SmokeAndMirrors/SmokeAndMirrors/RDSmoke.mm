@@ -345,7 +345,7 @@ RD_FINAL_CLASS
             
             signature = *(const char **)signaturePtr;
         }
-        [RDMethodSignature signatureWithObjcTypeEncoding:signature];
+        signature == NULL ? nil : [RDMethodSignature signatureWithObjcTypeEncoding:signature];
     });
     
     RDBlockKind kind = ({

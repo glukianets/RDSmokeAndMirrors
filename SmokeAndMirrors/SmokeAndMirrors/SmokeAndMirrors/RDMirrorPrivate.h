@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
                           version:(int)version
                             image:(NSString *)image
                              supr:(nullable Class)supr
-                             meta:(Class)meta
+                             meta:(nullable Class)meta
                         protocols:(NSArray<RDProtocol *> *)protocols
                           methods:(NSArray<RDMethod *> *)methods
                             ivars:(NSArray<RDIvar *> *)ivars
@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithObjcMethod:(Method)method
                            inSmoke:(RDSmoke *)smoke
                       withSelector:(SEL)selector
-                      andSignature:(RDMethodSignature *)signature NS_DESIGNATED_INITIALIZER;
+                      andSignature:(RDMethodSignature *_Nullable)signature NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -78,9 +78,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
 - (instancetype)initWithIvar:(Ivar)ivar
                      inSmoke:(RDSmoke *)smoke
-                    withName:(NSString *)name
+                    withName:(nullable NSString *)name
                     atOffset:(ptrdiff_t)offset
-                    withType:(RDType *)type NS_DESIGNATED_INITIALIZER;
+                    withType:(RDType *_Nullable)type NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -93,7 +93,7 @@ NS_ASSUME_NONNULL_BEGIN
                      inSmoke:(RDSmoke *)smoke
                         clss:(RDClass *)clss
                         size:(size_t)size
-                   signature:(RDMethodSignature *)signature NS_DESIGNATED_INITIALIZER;
+                   signature:(RDMethodSignature *_Nullable)signature NS_DESIGNATED_INITIALIZER;
 
 @end
 

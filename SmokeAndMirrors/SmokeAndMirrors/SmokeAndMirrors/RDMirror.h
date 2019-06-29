@@ -118,9 +118,9 @@ RD_FINAL_CLASS
 RD_FINAL_CLASS
 @interface RDIvar : RDMirror
 
-@property (nonatomic, readonly) NSString *name;
+@property (nonatomic, readonly, nullable) NSString *name;
 @property (nonatomic, readonly) ptrdiff_t offset;
-@property (nonatomic, readonly) RDType *type;
+@property (nonatomic, readonly, nullable) RDType *type;
 
 @end
 
@@ -137,7 +137,7 @@ RD_FINAL_CLASS
 @property (nonatomic, readonly) size_t size;
 @property (nonatomic, readonly) RDClass *clss;
 @property (nonatomic, readonly) RDBlockKind kind;
-@property (nonatomic, readonly) RDMethodSignature *signature;
+@property (nonatomic, readonly, nullable) RDMethodSignature *signature;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
