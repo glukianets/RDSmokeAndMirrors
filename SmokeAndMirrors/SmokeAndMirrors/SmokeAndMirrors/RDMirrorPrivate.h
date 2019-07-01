@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithObjcMethod:(Method)method
                            inSmoke:(RDSmoke *)smoke
                       withSelector:(SEL)selector
-                      andSignature:(RDMethodSignature *_Nullable)signature NS_DESIGNATED_INITIALIZER;
+                      andSignature:(nullable RDMethodSignature *)signature NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -80,7 +80,7 @@ NS_ASSUME_NONNULL_BEGIN
                      inSmoke:(RDSmoke *)smoke
                     withName:(nullable NSString *)name
                     atOffset:(ptrdiff_t)offset
-                    withType:(RDType *_Nullable)type NS_DESIGNATED_INITIALIZER;
+                    withType:(nullable RDType *)type NS_DESIGNATED_INITIALIZER;
 
 @end
 

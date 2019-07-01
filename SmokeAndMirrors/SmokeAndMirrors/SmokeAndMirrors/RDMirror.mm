@@ -1,7 +1,7 @@
 #import "RDMirror.h"
 #import "RDMirrorPrivate.h"
 #import "RDSmoke.h"
-#import "RDCommon.h"
+#import "RDPrivate.h"
 
 NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstanceLevel);
 NSString *blockString(NSString *name, RDMethodSignature *signature);

@@ -1,29 +1,12 @@
 #import <Foundation/Foundation.h>
-#include <algorithm>
+#import <objc/runtime.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-template<typename T, typename U>
-NSArray<U *> *_Nullable map_nn(NSArray<T *> *_Nullable source, U *_Nullable (^_Nonnull block)(T *_Nonnull)) {
-    if (source == nil)
-        return nil;
-    
-    NSMutableArray<U *> *result = [NSMutableArray arrayWithCapacity:source.count];
-    for (T *obj in source)
-        if (U *res = block(obj); res)
-            [result addObject:res];
-    
-    return result;
-}
+#define RD_FINAL_CLASS __attribute__((objc_subclassing_restricted))
 
-template<typename R, typename ... T>
-NSArray<R *> *_Nonnull zip(R *_Nullable (^_Nonnull zipper)(T *_Nonnull...), NSArray<T *> *_Nullable... args) {
-    NSMutableArray<R *> *result = [NSMutableArray array];
-    for (NSUInteger i = 0; i < std::min(args.count...); ++i)
-        if (R *object = zipper(args[i]...); object)
-            [result addObject:object];
-    
-    return result;
-}
+#define RD_RETURNS_RETAINED __attribute__((ns_returns_retained))
+#define RD_RETURNS_UNRETAINED __attribute__((ns_returns_not_retained))
+#define RD_RETURNS_AUTORELEASED __attribute__((ns_returns_autoreleased))
 
 NS_ASSUME_NONNULL_END

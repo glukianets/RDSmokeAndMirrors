@@ -40,11 +40,31 @@
     }];
 }
 
-- (void)test {
-    RDSmoke *smoke = [RDSmoke new];
-    //object_getClass(^{ NSLog(@"%p", self); })
-    RDBlock *cls = [smoke mirrorForObjcBlock:[^id (id _){ return nil; } copy]];
-    NSLog(@"%@", cls);
+- (void)testValue {
+    NSString *cannary1 = [NSString stringWithFormat:@"Red can%@!", @"nary"];
+    NSString *cannary2 = [NSString stringWithFormat:@"Blue can%@!", @"nary"];
+    NSString *cannary3 = [NSString stringWithFormat:@"Lying can%@!", @"nary"];
+
+    struct Trap { id obj; };
+    struct Trap t = {.obj=cannary1};
+
+    RDValue *value = RDValueBox(t);
+    XCTAssertNotNil(value, @"Should create");
+    XCTAssertEqual(value, value.copy, @"Should elide copy");
+
+    RDMutableValue *mvalue = [value mutableCopy];
+    XCTAssertNotNil(mvalue, @"Should mutable copy");
+
+    t.obj = nil;
+    XCTAssert(RDValueGet(value, &t), @"Should get");
+    XCTAssertEqual(t.obj, cannary1, @"Should preserve value");
+
+    t.obj = cannary2;
+    XCTAssert(RDValueSet(mvalue, t), @"Should set");
+
+    t.obj = cannary3;
+    XCTAssert(RDValueGet(mvalue, &t), @"Should get");
+    XCTAssertEqual(t.obj, cannary2, @"Should preserve value");
 }
 
 @end

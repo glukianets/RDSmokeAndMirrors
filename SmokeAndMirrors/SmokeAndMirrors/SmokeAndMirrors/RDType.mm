@@ -1,12 +1,14 @@
 #import "RDType.h"
 #import "RDCommon.h"
+#import "RDPrivate.h"
 
 #include <initializer_list>
 #include <algorithm>
 #include <utility>
 
 size_t const RDTypeSizeUnknown = (size_t)0 - 1;
-size_t const RDTypeAlignmentUnknown = (size_t)0 - 2;
+size_t const RDTypeAlignmentUnknown = (size_t)0 - 1;
+size_t const RDFieldOffsetUnknown = (size_t)0 -1;
 
 static size_t parseCountSucceded = 0;
 static size_t parseCountFailed = 0;
@@ -14,6 +16,7 @@ static size_t parseCountFailed = 0;
 RDType *parseType(const char *_Nonnull *_Nonnull encoding);
 RDMethodSignature *parseMethodSignature(const char *_Nonnull *_Nonnull encoding);
 RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encoding);
+const char *cloneCString(const char *source, size_t length);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,7 +38,30 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDType
 
 + (instancetype)typeWithObjcTypeEncoding:(const char *)encoding {
-    return parseType(&encoding);
+    if (encoding == NULL || *encoding == '\0')
+        return nil;
+    
+    const char *it = encoding;
+    RDType *type = parseType(&it);
+
+    const char *clonedEncoding = cloneCString(encoding, it - encoding);
+    
+    @try {
+        NSUInteger size = 0, alignment = 0;
+        NSGetSizeAndAlignment(clonedEncoding, &size, &alignment);
+        
+        NSAssert(size == type.size || alignment == type.alignment, @"Miscalculated size and alignment: %zu, %zu instead of %zu, %zu (parsed type is %@)", type.size, type.alignment, size, alignment, type);
+        
+    } @catch(id e) {
+        // NSGetSizeAndAlignment is kinda buggy
+    }
+
+    if (type != nil && type->_objCTypeEncoding == NULL)
+        type->_objCTypeEncoding = clonedEncoding;
+    else
+        free((void *)clonedEncoding);
+    
+    return type;
 }
 
 - (instancetype)initWithByteSize:(size_t)size alignment:(size_t)alignment {
@@ -47,12 +73,43 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return self;
 }
 
+- (void)dealloc {
+    free((void *)_objCTypeEncoding);
+}
+
+- (BOOL)isEqualToType:(nullable RDType *)type {
+    //TODO: implement
+    return NO;
+}
+
+- (BOOL)isAssignableFromType:(nullable RDType *)type {
+    //TODO: implement
+    return NO;
+}
+
 - (NSString *)description {
     return [[NSString stringWithFormat:self.format ?: @"%@", @""] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
 }
 
 - (NSString *)format {
     return @"%@";
+}
+
+#pragma mark <NSSecureCoding>
+
++ (BOOL)supportsSecureCoding {
+    return YES;
+}
+
+#pragma mark <NSCoding>
+
+- (void)encodeWithCoder:(nonnull NSCoder *)coder {
+    //TODO: implement
+}
+
+- (nullable instancetype)initWithCoder:(nonnull NSCoder *)coder {
+    //TODO: implement
+    return nil;
 }
 
 @end
@@ -92,32 +149,34 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 + (instancetype)instanceWithKind:(RDPrimitiveTypeKind)kind {
     static NSDictionary *instances;
     static dispatch_once_t onceToken;
+#define RD_INSTANCE(TYPE) @(TYPE): [[RDPrimitiveType alloc] initWithKind:TYPE]
     dispatch_once(&onceToken, ^{
         instances = @{
-            @(RDPrimitiveTypeKindUnknown):          [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnknown],
-            @(RDPrimitiveTypeKindVoid):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindVoid],
-            @(RDPrimitiveTypeKindClass):            [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindClass],
-            @(RDPrimitiveTypeKindSelector):         [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindSelector],
-            @(RDPrimitiveTypeKindAtom):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindAtom],
-            @(RDPrimitiveTypeKindCString):          [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindCString],
-            @(RDPrimitiveTypeKindChar):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindChar],
-            @(RDPrimitiveTypeKindUnsignedChar):     [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedChar],
-            @(RDPrimitiveTypeKindBool):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindBool],
-            @(RDPrimitiveTypeKindShort):            [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindShort],
-            @(RDPrimitiveTypeKindUnsignedShort):    [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedShort],
-            @(RDPrimitiveTypeKindInt):              [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindInt],
-            @(RDPrimitiveTypeKindUnsignedInt):      [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedInt],
-            @(RDPrimitiveTypeKindLong):             [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindLong],
-            @(RDPrimitiveTypeKindUnsignedLong):     [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedLong],
-            @(RDPrimitiveTypeKindLongLong):         [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindLongLong],
-            @(RDPrimitiveTypeKindUnsignedLongLong): [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedLongLong],
-            @(RDPrimitiveTypeKindInt128):           [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindInt128],
-            @(RDPrimitiveTypeKindUnsignedInt128):   [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindUnsignedInt128],
-            @(RDPrimitiveTypeKindFloat):            [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindFloat],
-            @(RDPrimitiveTypeKindDouble):           [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindDouble],
-            @(RDPrimitiveTypeKindLongDouble):       [[RDPrimitiveType alloc] initWithKind:RDPrimitiveTypeKindLongDouble],
+            RD_INSTANCE(RDPrimitiveTypeKindUnknown),
+            RD_INSTANCE(RDPrimitiveTypeKindVoid),
+            RD_INSTANCE(RDPrimitiveTypeKindClass),
+            RD_INSTANCE(RDPrimitiveTypeKindSelector),
+            RD_INSTANCE(RDPrimitiveTypeKindAtom),
+            RD_INSTANCE(RDPrimitiveTypeKindCString),
+            RD_INSTANCE(RDPrimitiveTypeKindChar),
+            RD_INSTANCE(RDPrimitiveTypeKindUnsignedChar),
+            RD_INSTANCE(RDPrimitiveTypeKindBool),
+            RD_INSTANCE(RDPrimitiveTypeKindShort),
+            RD_INSTANCE(RDPrimitiveTypeKindUnsignedShort),
+            RD_INSTANCE(RDPrimitiveTypeKindInt),
+            RD_INSTANCE(RDPrimitiveTypeKindUnsignedInt),
+            RD_INSTANCE(RDPrimitiveTypeKindLong),
+            RD_INSTANCE(RDPrimitiveTypeKindUnsignedLong),
+            RD_INSTANCE(RDPrimitiveTypeKindLongLong),
+            RD_INSTANCE(RDPrimitiveTypeKindUnsignedLongLong),
+            RD_INSTANCE(RDPrimitiveTypeKindInt128),
+            RD_INSTANCE(RDPrimitiveTypeKindUnsignedInt128),
+            RD_INSTANCE(RDPrimitiveTypeKindFloat),
+            RD_INSTANCE(RDPrimitiveTypeKindDouble),
+            RD_INSTANCE(RDPrimitiveTypeKindLongDouble),
         };
     });
+#undef RD_INSTANCE
     return instances[@(kind)];
 }
 
@@ -172,9 +231,9 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 + (std::pair<size_t, size_t>)sizeAndAlignmentForKind:(RDPrimitiveTypeKind)kind {
     switch (kind) {
         case RDPrimitiveTypeKindUnknown:
-            return { 0, 0 };
+            return { RDTypeSizeUnknown, RDTypeAlignmentUnknown };
         case RDPrimitiveTypeKindVoid:
-            return { 0, 0 };
+            return { 0, RDTypeAlignmentUnknown };
         case RDPrimitiveTypeKindClass:
             return { sizeof(Class), alignof(Class) };
         case RDPrimitiveTypeKindSelector:
@@ -371,6 +430,25 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return self;
 }
 
+- (size_t)offsetForElementAtIndex:(NSUInteger)index {
+    if (index >= self.count)
+        return RDFieldOffsetUnknown;
+
+    if (self.type == nil)
+        return RDFieldOffsetUnknown;
+    
+    size_t size = self.type.size;
+    size_t alignment = self.type.alignment;
+
+    if (size == 0 || size == RDTypeSizeUnknown || alignment == RDTypeSizeUnknown)
+        return RDFieldOffsetUnknown;
+    
+    while (size % alignment != 0)
+        ++size;
+    
+    return index * size;
+}
+
 - (NSString *)format {
     if (NSString *fmt = self.type.format; fmt.length > 1)
         return [NSString stringWithFormat:fmt, [NSString stringWithFormat:@"%%@[%zu]", self.size]];
@@ -412,23 +490,34 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 - (instancetype)initWithName:(NSString *)name fields:(NSArray<RDField *> *)fields {
     size_t offset = 0;
-    size_t alignment = 0;
+    size_t alignment = 1;
+
     for (RDField *field in fields) {
         size_t falignment = field.type.alignment;
         size_t fsize = field.type.size;
-        if (falignment == 0 || falignment == RDTypeAlignmentUnknown || fsize == 0 || fsize == RDTypeSizeUnknown) {
+
+        if (field.type == nil || falignment == RDTypeAlignmentUnknown || fsize == RDTypeSizeUnknown) {
             offset = RDTypeSizeUnknown;
             alignment = RDTypeAlignmentUnknown;
             break;
         }
+
         while (offset % falignment != 0)
             ++offset;
+
         field.offset = offset;
         offset += field.type.size;
         alignment = MAX(falignment, alignment);
     }
+    
+    if (offset == RDTypeSizeUnknown || alignment == RDTypeAlignmentUnknown)
+        for (RDField *field in fields)
+            field.offset = RDFieldOffsetUnknown;
+    else
+        while (offset != RDTypeSizeUnknown && offset % alignment != 0)
+            ++offset;
 
-    self = [super initWithByteSize:MAX(1, offset) alignment:MAX(1, alignment)];
+    self = [super initWithByteSize:MAX(1, offset) alignment:alignment];
     if (self) {
         _name = name.copy;
         _fields = fields.copy;
@@ -617,6 +706,17 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const char *cloneCString(const char *source, size_t length) {
+    if (source == NULL)
+        return NULL;
+    
+    size_t characterSize = MAX(strlen(source), length);
+    char *str = (char *)calloc(characterSize + 1, 1);
+    memccpy(str, source, '\0', characterSize);
+    str[characterSize] = '\0';
+    return str;
+}
+
 NSString *parseString(const char *_Nonnull *_Nonnull encoding, char terminator, BOOL consume = NO) {
     static constexpr size_t LIMIT = 8192;
     char buff[LIMIT] = {};
@@ -772,7 +872,7 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 while (index < LIMIT && **encoding != RDTypeEncodingSymbolStructBodySep && **encoding != cl && **encoding != '\0')
                     buff[index++] = *((*encoding)++);
                 
-                NSString *name = buff[0] == '?' && buff[1] == '\0' ? nil :  [NSString stringWithUTF8String:buff];
+                NSString *name = buff[0] == '?' && buff[1] == '\0' ? nil : [NSString stringWithUTF8String:buff];
                 
                 NSMutableArray<RDField *> *fields = nil;
                 

@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import "RDCommon.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -83,23 +83,28 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 extern size_t const RDTypeSizeUnknown;
 extern size_t const RDTypeAlignmentUnknown;
 
-@interface RDType : NSObject
+@interface RDType : NSObject<NSSecureCoding>
+
+@property (nonatomic, readonly) size_t size;
+@property (nonatomic, readonly) size_t alignment;
+@property (nonatomic, readonly) const char *objCTypeEncoding;
 
 + (nullable instancetype)typeWithObjcTypeEncoding:(const char *)types;
 + (instancetype)new NS_UNAVAILABLE;
 
-@property (nonatomic, readonly) size_t size;
-@property (nonatomic, readonly) size_t alignment;
-
 - (instancetype)init NS_UNAVAILABLE;
 - (NSString *_Nullable)format;
 - (NSString*)description;
+
+- (BOOL)isEqualToType:(nullable RDType *)type;
+- (BOOL)isAssignableFromType:(nullable RDType *)type;
 
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDUnknownType : RDType
+@property (nonatomic, readonly, class) RDUnknownType *instance;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -155,9 +160,14 @@ extern size_t const RDTypeAlignmentUnknown;
 @interface RDArrayType : RDType
 @property (nonatomic, readonly) NSUInteger count;
 @property (nonatomic, readonly, nullable) RDType *type;
+
+- (size_t)offsetForElementAtIndex:(NSUInteger)index;
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+extern size_t const RDFieldOffsetUnknown;
 
 @interface RDField : NSObject
 @property (nonatomic, readonly) NSString *name;

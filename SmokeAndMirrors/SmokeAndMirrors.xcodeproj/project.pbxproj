@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		71448D3222C823120030669A /* RDValue.h in Headers */ = {isa = PBXBuildFile; fileRef = 71448D3022C823120030669A /* RDValue.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		71448D3322C823120030669A /* RDValue.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71448D3122C823120030669A /* RDValue.mm */; };
+		71448D4922C835F00030669A /* RDCommon.h in Headers */ = {isa = PBXBuildFile; fileRef = 71448D4722C835F00030669A /* RDCommon.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		71448D4A22C835F00030669A /* RDCommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 71448D4822C835F00030669A /* RDCommon.m */; };
 		716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */ = {isa = PBXBuildFile; fileRef = 716A1CBA22C2683E002BA968 /* RDSmoke.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */ = {isa = PBXBuildFile; fileRef = 716A1CBB22C2683E002BA968 /* RDSmoke.mm */; };
 		7194C17922C2564E001E9656 /* SmokeAndMirrors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */; };
@@ -17,7 +21,7 @@
 		71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */; };
 		71D06DAB22C2B35000568CAE /* RDType.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA922C2B35000568CAE /* RDType.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71D06DAC22C2B35000568CAE /* RDType.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71D06DAA22C2B35000568CAE /* RDType.mm */; };
-		71D06DAE22C2B4F500568CAE /* RDCommon.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DAD22C2B4F500568CAE /* RDCommon.h */; };
+		71D06DAE22C2B4F500568CAE /* RDPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DAD22C2B4F500568CAE /* RDPrivate.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +35,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		71448D3022C823120030669A /* RDValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDValue.h; sourceTree = "<group>"; };
+		71448D3122C823120030669A /* RDValue.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDValue.mm; sourceTree = "<group>"; };
+		71448D4722C835F00030669A /* RDCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDCommon.h; sourceTree = "<group>"; };
+		71448D4822C835F00030669A /* RDCommon.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDCommon.m; sourceTree = "<group>"; };
 		716A1CBA22C2683E002BA968 /* RDSmoke.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDSmoke.h; sourceTree = "<group>"; };
 		716A1CBB22C2683E002BA968 /* RDSmoke.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDSmoke.mm; sourceTree = "<group>"; };
 		7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SmokeAndMirrors.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -44,7 +52,7 @@
 		71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDMirrorPrivate.h; sourceTree = "<group>"; };
 		71D06DA922C2B35000568CAE /* RDType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDType.h; sourceTree = "<group>"; };
 		71D06DAA22C2B35000568CAE /* RDType.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDType.mm; sourceTree = "<group>"; };
-		71D06DAD22C2B4F500568CAE /* RDCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDCommon.h; sourceTree = "<group>"; };
+		71D06DAD22C2B4F500568CAE /* RDPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDPrivate.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,7 +114,9 @@
 		7194C18922C25995001E9656 /* SmokeAndMirrors */ = {
 			isa = PBXGroup;
 			children = (
-				71D06DAD22C2B4F500568CAE /* RDCommon.h */,
+				71D06DAD22C2B4F500568CAE /* RDPrivate.h */,
+				71448D4722C835F00030669A /* RDCommon.h */,
+				71448D4822C835F00030669A /* RDCommon.m */,
 				7194C18A22C25A02001E9656 /* RDMirror.h */,
 				7194C18B22C25A02001E9656 /* RDMirror.mm */,
 				71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */,
@@ -114,6 +124,8 @@
 				71D06DAA22C2B35000568CAE /* RDType.mm */,
 				716A1CBA22C2683E002BA968 /* RDSmoke.h */,
 				716A1CBB22C2683E002BA968 /* RDSmoke.mm */,
+				71448D3022C823120030669A /* RDValue.h */,
+				71448D3122C823120030669A /* RDValue.mm */,
 			);
 			path = SmokeAndMirrors;
 			sourceTree = "<group>";
@@ -125,12 +137,14 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71448D3222C823120030669A /* RDValue.h in Headers */,
 				716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */,
 				71D06DAB22C2B35000568CAE /* RDType.h in Headers */,
 				7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */,
-				71D06DAE22C2B4F500568CAE /* RDCommon.h in Headers */,
+				71D06DAE22C2B4F500568CAE /* RDPrivate.h in Headers */,
 				7194C18C22C25A02001E9656 /* RDMirror.h in Headers */,
 				71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */,
+				71448D4922C835F00030669A /* RDCommon.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -231,9 +245,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71448D4A22C835F00030669A /* RDCommon.m in Sources */,
 				7194C18D22C25A02001E9656 /* RDMirror.mm in Sources */,
 				71D06DAC22C2B35000568CAE /* RDType.mm in Sources */,
 				716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */,
+				71448D3322C823120030669A /* RDValue.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

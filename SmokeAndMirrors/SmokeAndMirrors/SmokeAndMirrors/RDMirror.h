@@ -1,8 +1,5 @@
-#import <Foundation/Foundation.h>
-#import <objc/runtime.h>
 #import "RDType.h"
-
-#define RD_FINAL_CLASS __attribute__((objc_subclassing_restricted))
+#import "RDCommon.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
