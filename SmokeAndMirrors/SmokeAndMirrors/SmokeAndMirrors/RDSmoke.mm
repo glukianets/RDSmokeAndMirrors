@@ -174,6 +174,7 @@ RD_FINAL_CLASS
                                                        @"NSItemProviderReading",
                                                        @"_NSAsynchronousPreparationInputParameters",
                                                        @"SFDigestOperation",
+                                                       @"SFKeyDerivingOperation",
                                                        @"MPSCNNBatchNormalizationDataSource",
                                                        nil];
 

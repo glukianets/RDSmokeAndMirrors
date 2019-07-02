@@ -18,6 +18,10 @@ RDMethodSignature *parseMethodSignature(const char *_Nonnull *_Nonnull encoding)
 RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encoding);
 const char *cloneCString(const char *source, size_t length);
 
+BOOL areEqual(_Nullable id lhs, _Nullable id rhs) {
+    return lhs == rhs || lhs != nil && rhs != nil && [lhs isEqual:rhs];
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
@@ -77,22 +81,24 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     free((void *)_objCTypeEncoding);
 }
 
-- (BOOL)isEqualToType:(nullable RDType *)type {
-    //TODO: implement
-    return NO;
-}
-
-- (BOOL)isAssignableFromType:(nullable RDType *)type {
-    //TODO: implement
-    return NO;
-}
-
 - (NSString *)description {
     return [[NSString stringWithFormat:self.format ?: @"%@", @""] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
 }
 
 - (NSString *)format {
     return @"%@";
+}
+
+- (BOOL)isEqual:(id)object {
+    return [object isKindOfClass:RDType.self] && [self isEqualToType:object];
+}
+
+- (BOOL)isEqualToType:(nullable RDType *)type {
+    return type == self;
+}
+
+- (BOOL)isAssignableFromType:(nullable RDType *)type {
+    return type == self || type != nil && [self isEqualToType:type];
 }
 
 #pragma mark <NSSecureCoding>
@@ -119,16 +125,44 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDUnknownType
 
 + (instancetype)instance {
-    static RDUnknownType *instance;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        instance = [[RDUnknownType alloc] initWithByteSize:RDTypeSizeUnknown alignment:RDTypeAlignmentUnknown];
-    });
+    static RDUnknownType *instance = [[RDUnknownType alloc] initWithByteSize:RDTypeSizeUnknown
+                                                                   alignment:RDTypeAlignmentUnknown];
     return instance;
 }
 
 - (NSString *)format {
     return @"? %@";
+}
+
+- (BOOL)isEqualToType:(nullable RDType *)type {
+    return [type isKindOfClass:RDUnknownType.self];
+}
+
+- (BOOL)isAssignableFromType:(nullable RDType *)type {
+    return NO;
+}
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@implementation RDVoidType
+
++ (instancetype)instance {
+    static RDVoidType *instance = [[RDVoidType alloc] initWithByteSize:0 alignment:1];
+    return instance;
+}
+
+- (NSString *)format {
+    return @"void %@";
+}
+
+- (BOOL)isEqualToType:(nullable RDType *)type {
+    return [type isKindOfClass:RDVoidType.self];
+}
+
+- (BOOL)isAssignableFromType:(nullable RDType *)type {
+    return NO;
 }
 
 @end
@@ -147,45 +181,35 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 }
 
 + (instancetype)instanceWithKind:(RDPrimitiveTypeKind)kind {
-    static NSDictionary *instances;
-    static dispatch_once_t onceToken;
 #define RD_INSTANCE(TYPE) @(TYPE): [[RDPrimitiveType alloc] initWithKind:TYPE]
-    dispatch_once(&onceToken, ^{
-        instances = @{
-            RD_INSTANCE(RDPrimitiveTypeKindUnknown),
-            RD_INSTANCE(RDPrimitiveTypeKindVoid),
-            RD_INSTANCE(RDPrimitiveTypeKindClass),
-            RD_INSTANCE(RDPrimitiveTypeKindSelector),
-            RD_INSTANCE(RDPrimitiveTypeKindAtom),
-            RD_INSTANCE(RDPrimitiveTypeKindCString),
-            RD_INSTANCE(RDPrimitiveTypeKindChar),
-            RD_INSTANCE(RDPrimitiveTypeKindUnsignedChar),
-            RD_INSTANCE(RDPrimitiveTypeKindBool),
-            RD_INSTANCE(RDPrimitiveTypeKindShort),
-            RD_INSTANCE(RDPrimitiveTypeKindUnsignedShort),
-            RD_INSTANCE(RDPrimitiveTypeKindInt),
-            RD_INSTANCE(RDPrimitiveTypeKindUnsignedInt),
-            RD_INSTANCE(RDPrimitiveTypeKindLong),
-            RD_INSTANCE(RDPrimitiveTypeKindUnsignedLong),
-            RD_INSTANCE(RDPrimitiveTypeKindLongLong),
-            RD_INSTANCE(RDPrimitiveTypeKindUnsignedLongLong),
-            RD_INSTANCE(RDPrimitiveTypeKindInt128),
-            RD_INSTANCE(RDPrimitiveTypeKindUnsignedInt128),
-            RD_INSTANCE(RDPrimitiveTypeKindFloat),
-            RD_INSTANCE(RDPrimitiveTypeKindDouble),
-            RD_INSTANCE(RDPrimitiveTypeKindLongDouble),
-        };
-    });
+    static NSDictionary *instances = @{
+        RD_INSTANCE(RDPrimitiveTypeKindClass),
+        RD_INSTANCE(RDPrimitiveTypeKindSelector),
+        RD_INSTANCE(RDPrimitiveTypeKindAtom),
+        RD_INSTANCE(RDPrimitiveTypeKindCString),
+        RD_INSTANCE(RDPrimitiveTypeKindChar),
+        RD_INSTANCE(RDPrimitiveTypeKindUnsignedChar),
+        RD_INSTANCE(RDPrimitiveTypeKindBool),
+        RD_INSTANCE(RDPrimitiveTypeKindShort),
+        RD_INSTANCE(RDPrimitiveTypeKindUnsignedShort),
+        RD_INSTANCE(RDPrimitiveTypeKindInt),
+        RD_INSTANCE(RDPrimitiveTypeKindUnsignedInt),
+        RD_INSTANCE(RDPrimitiveTypeKindLong),
+        RD_INSTANCE(RDPrimitiveTypeKindUnsignedLong),
+        RD_INSTANCE(RDPrimitiveTypeKindLongLong),
+        RD_INSTANCE(RDPrimitiveTypeKindUnsignedLongLong),
+        RD_INSTANCE(RDPrimitiveTypeKindInt128),
+        RD_INSTANCE(RDPrimitiveTypeKindUnsignedInt128),
+        RD_INSTANCE(RDPrimitiveTypeKindFloat),
+        RD_INSTANCE(RDPrimitiveTypeKindDouble),
+        RD_INSTANCE(RDPrimitiveTypeKindLongDouble),
+    };
 #undef RD_INSTANCE
     return instances[@(kind)];
 }
 
 - (NSString *)format {
     switch (self.kind) {
-        case RDPrimitiveTypeKindUnknown:
-            return nil;
-        case RDPrimitiveTypeKindVoid:
-            return @"void %@";
         case RDPrimitiveTypeKindClass:
             return @"Class %@";
         case RDPrimitiveTypeKindSelector:
@@ -230,10 +254,6 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 + (std::pair<size_t, size_t>)sizeAndAlignmentForKind:(RDPrimitiveTypeKind)kind {
     switch (kind) {
-        case RDPrimitiveTypeKindUnknown:
-            return { RDTypeSizeUnknown, RDTypeAlignmentUnknown };
-        case RDPrimitiveTypeKindVoid:
-            return { 0, RDTypeAlignmentUnknown };
         case RDPrimitiveTypeKindClass:
             return { sizeof(Class), alignof(Class) };
         case RDPrimitiveTypeKindSelector:
@@ -276,6 +296,16 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     }
 }
 
+- (BOOL)isEqualToType:(nullable RDType *)type {
+    return [super isEqualToType:type]
+        || [type isKindOfClass:RDPrimitiveType.self]
+        && ((RDPrimitiveType *)type).kind == self.kind;
+}
+
+- (BOOL)isAssignableFromType:(RDType *)type {
+    return [self isEqualToType:type];
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -297,6 +327,17 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return [NSString stringWithFormat:@"%@%@ %@%%@", cls ? cls : @"id", protocols, cls ? @"*" : @""];
 }
 
+- (BOOL)isEqualToType:(RDType *)type {
+    return [super isEqualToType:type]
+        || [type isKindOfClass:RDObjectType.self]
+        && areEqual((RDObjectType *)type.className, self.className)
+        && areEqual((RDObjectType *)type, self.protocolNames);
+}
+
+- (BOOL)isAssignableFromType:(RDType *)type {
+    return [type isKindOfClass:RDObjectType.self];
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,88 +353,74 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return @"void (^%@)(...)";
 }
 
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDPointerType
-
-- (instancetype)initWithPointeeType:(RDType *)type {
-    self = [super initWithByteSize:sizeof(void *) alignment:alignof(void *)];
-    if (self) {
-        _type = type;
-    }
-    return self;
-}
-
-- (NSString *)format {
-    if (NSString *fmt = self.type.format; fmt.length > 1)
-        return [NSString stringWithFormat:fmt, @"*%@"];
-    else
-        return nil;
+- (BOOL)isEqualToType:(RDType *)type {
+    return [type isKindOfClass:RDBlockType.self];
 }
 
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@implementation RDConstType
+@implementation RDCompositeType
 
-- (instancetype)initWithType:(RDType *)type {
-    self = [super initWithByteSize:type.size alignment:type.alignment];
+- (instancetype)initWithKind:(RDCompositeTypeKind)kind type:(RDType *)type {
+    size_t size = RDTypeSizeUnknown, alignment = RDTypeAlignmentUnknown;
+    switch (kind) {
+        case RDCompositeTypeKindPointer:
+            size = sizeof(void *);
+            alignment = alignof(void *);
+            break;
+        case RDCompositeTypeKindVector:
+            // ?
+            break;
+        case RDCompositeTypeKindComplex:
+            size = type.size * 2;
+            alignment = type.alignment;
+            break;
+        case RDCompositeTypeKindAtomic:
+        case RDCompositeTypeKindConst:
+            size = type.size;
+            alignment = type.alignment;
+            break;
+    }
+    
+    self = [super initWithByteSize:size alignment:alignment];
     if (self) {
+        _kind = kind;
         _type = type;
     }
     return self;
 }
 
 - (NSString *)format {
-    if (NSString *fmt = self.type.format; fmt.length > 1)
-        return [NSString stringWithFormat:fmt, @"const %@"];
-    else
+    if (NSString *fmt = self.type.format; fmt.length < 2)
         return nil;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDAtomicType
-
-- (instancetype)initWithType:(RDType *)type {
-    self = [super initWithByteSize:type.size alignment:type.alignment]; // is this assumption safe?
-    if (self) {
-        _type = type;
-    }
-    return self;
-}
-
-- (NSString *)format {
-    if (NSString *fmt = self.type.format; fmt.length > 1)
-        return [NSString stringWithFormat:fmt, @"_Atomic %@"];
     else
-        return nil;
+        switch (self.kind) {
+            case RDCompositeTypeKindPointer:
+                return [NSString stringWithFormat:fmt, @"*%@"];
+            case RDCompositeTypeKindVector:
+                return nil; // ?
+            case RDCompositeTypeKindComplex:
+                return [NSString stringWithFormat:fmt, @"_Complex %@"];
+            case RDCompositeTypeKindAtomic:
+                return [NSString stringWithFormat:fmt, @"_Atomic %@"];
+            case RDCompositeTypeKindConst:
+                return [NSString stringWithFormat:fmt, @"const %@"];
+        }
 }
 
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDComplexType
-
-- (instancetype)initWithType:(RDType *)type {
-    self = [super initWithByteSize:type.size * 2 alignment:type.alignment];
-    if (self) {
-        _type = type;
-    }
-    return self;
+- (BOOL)isEqualToType:(RDType *)type {
+    return [type isKindOfClass:RDCompositeType.self]
+        && self.kind == ((RDCompositeType *)type).kind
+        && [self.type isEqualToType:((RDCompositeType *)type).type];
 }
 
-- (NSString *)format {
-    if (NSString *fmt = self.type.format; fmt.length > 1)
-        return [NSString stringWithFormat:fmt, @"_Complex %@"];
-    else
-        return nil;
+- (BOOL)isAssignableFromType:(RDType *)type {
+    //TODO: more complex logic
+    return [type isKindOfClass:RDCompositeType.self]
+        && self.kind == ((RDCompositeType *)type).kind
+        && [self.type isAssignableFromType:((RDCompositeType *)type).type];
 }
 
 @end
@@ -414,6 +441,15 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return [NSString stringWithFormat:@"unsigned int %%@ : %zu", self.bitsize];
 }
 
+- (BOOL)isEqualToType:(RDType *)type {
+    return [type isKindOfClass:RDBitfieldType.class]
+        && self.bitsize == ((RDBitfieldType *)type).bitsize;
+}
+
+- (BOOL)isAssignableFromType:(RDType *)type {
+    return NO;
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -421,7 +457,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDArrayType
 
 - (instancetype)initWithCount:(NSUInteger)count elementsOfType:(RDType *)type {
-    type = type ?: [[RDPointerType alloc] initWithPointeeType:[RDPrimitiveType instanceWithKind:RDPrimitiveTypeKindVoid]];
+    type = type ?: RDUnknownType.instance;
     self = [super initWithByteSize:type.size * count alignment:type.alignment];
     if (self) {
         _count = count;
@@ -456,6 +492,18 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
         return nil;
 }
 
+- (BOOL)isEqualToType:(RDType *)type {
+    return [type isKindOfClass:RDArrayType.class]
+        && [self.type isEqualToType:((RDArrayType *)type).type]
+        && self.count == ((RDArrayType *)type).count;
+}
+
+- (BOOL)isAssignableFromType:(RDType *)type {
+    return [type isKindOfClass:RDArrayType.class]
+        && [self.type isAssignableFromType:((RDArrayType *)type).type]
+        && self.count <= ((RDArrayType *)type).count;
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -486,66 +534,22 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@implementation RDStructType
+@implementation RDAggregateType
 
-- (instancetype)initWithName:(NSString *)name fields:(NSArray<RDField *> *)fields {
-    size_t offset = 0;
-    size_t alignment = 1;
-
-    for (RDField *field in fields) {
-        size_t falignment = field.type.alignment;
-        size_t fsize = field.type.size;
-
-        if (field.type == nil || falignment == RDTypeAlignmentUnknown || fsize == RDTypeSizeUnknown) {
-            offset = RDTypeSizeUnknown;
-            alignment = RDTypeAlignmentUnknown;
+- (instancetype)initWithKind:(RDAggregateTypeKind)kind named:(NSString *)name fields:(NSArray<RDField *> *)fields {
+    size_t size, alignment;
+    switch (kind) {
+        case RDAggregateTypeKindStruct:
+            [self.class size:&size alignment:&alignment forStructTypeWithFields:fields];
             break;
-        }
-
-        while (offset % falignment != 0)
-            ++offset;
-
-        field.offset = offset;
-        offset += field.type.size;
-        alignment = MAX(falignment, alignment);
-    }
-    
-    if (offset == RDTypeSizeUnknown || alignment == RDTypeAlignmentUnknown)
-        for (RDField *field in fields)
-            field.offset = RDFieldOffsetUnknown;
-    else
-        while (offset != RDTypeSizeUnknown && offset % alignment != 0)
-            ++offset;
-
-    self = [super initWithByteSize:MAX(1, offset) alignment:alignment];
-    if (self) {
-        _name = name.copy;
-        _fields = fields.copy;
-    }
-    return self;
-}
-
-- (NSString *)format {
-    return [NSString stringWithFormat:@"struct %@ { %@ } %%@", self.name ?: @"", [self.fields componentsJoinedByString:@" "]];
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDUnionType
-
-- (instancetype)initWithName:(NSString *)name fields:(NSArray<RDField *> *)fields {
-    size_t size = 1;
-    size_t alignment = 1;
-    for (RDField *field in fields) {
-        size = MAX(field.type.size, size);
-        alignment = MAX(field.type.alignment, alignment);
-        field.offset = 0u;
+        case RDAggregateTypeKindUnion:
+            [self.class size:&size alignment:&alignment forUnionTypeWithFields:fields];
+            break;
     }
     
     self = [super initWithByteSize:size alignment:alignment];
     if (self) {
+        _kind = kind;
         _name = name.copy;
         _fields = fields.copy;
     }
@@ -553,7 +557,120 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 }
 
 - (NSString *)format {
-    return [NSString stringWithFormat:@"union %@ { %@ } %%@", self.name, [self.fields componentsJoinedByString:@" "]];
+    NSString *fields = [self.fields componentsJoinedByString:@" "];
+    NSString *name = self.name ?: @"";
+    NSString *tag = ^NSString *(RDAggregateTypeKind kind) {
+        switch (kind) {
+            case RDAggregateTypeKindStruct: return @"struct";
+            case RDAggregateTypeKindUnion: return @"union";
+        }
+    }(self.kind);
+
+    return [NSString stringWithFormat:@"%@ %@ { %@ } %%@", tag, name, fields];
+}
+
+- (BOOL)isEqualToType:(RDType *)type {
+    return [type isKindOfClass:RDAggregateType.class]
+        && areEqual(self.name, ((RDAggregateType *)type).name)
+        && areEqual(self.fields, ((RDAggregateType *)type).fields);
+}
+
+- (BOOL)isAssignableFromType:(RDType *)other {
+    if (![other isKindOfClass:RDAggregateType.self])
+        return NO;
+    
+    RDAggregateType *type = (RDAggregateType *)other;
+    
+    if (self.kind != type.kind)
+        return NO;
+    
+    switch (self.kind) {
+        case RDAggregateTypeKindStruct: {
+            auto fieldAtOffset = ^RDField *(NSArray<RDField *> *fields, size_t offset) {
+                if (offset == RDFieldOffsetUnknown)
+                    return nil;
+                
+                for (RDField *field in fields)
+                    if (field.offset == offset)
+                        return field;
+                
+                return nil;
+            };
+            
+            for (RDField *field in self.fields)
+                if (size_t offset = field.offset; offset == RDFieldOffsetUnknown)
+                    return NO;
+                else if (RDType *fieldType = fieldAtOffset(type.fields, offset).type; fieldType == nil)
+                    return NO;
+                else if (![field.type isAssignableFromType:fieldType])
+                    return NO;
+                else
+                    continue;
+            
+            return YES;
+        }
+
+        case RDAggregateTypeKindUnion: {
+            auto fieldMatching = ^RDField *(NSArray<RDField *> *fields, RDType *type) {
+                if (type == nil)
+                    return nil;
+                
+                for (RDField *field in fields)
+                    if ([field.type isAssignableFromType:type])
+                        return field;
+                
+                return nil;
+            };
+
+            for (RDField *field in type.fields)
+                if (fieldMatching(self.fields, field.type) == nil)
+                    return NO;
+            
+            return YES;
+        }
+    }
+}
+
++ (void)size:(size_t *)size alignment:(size_t *)alignment forUnionTypeWithFields:(NSArray<RDField *> *)fields {
+    *size = 1;
+    *alignment = 1;
+    for (RDField *field in fields) {
+        *size = MAX(field.type.size, *size);
+        *alignment = MAX(field.type.alignment, *alignment);
+        field.offset = 0u;
+    }
+}
+
++ (void)size:(size_t *)size alignment:(size_t *)alignment forStructTypeWithFields:(NSArray<RDField *> *)fields {
+    size_t offset = 0;
+    *alignment = 1;
+    
+    for (RDField *field in fields) {
+        size_t falignment = field.type.alignment;
+        size_t fsize = field.type.size;
+        
+        if (field.type == nil || falignment == RDTypeAlignmentUnknown || fsize == RDTypeSizeUnknown) {
+            offset = RDTypeSizeUnknown;
+            *alignment = RDTypeAlignmentUnknown;
+            break;
+        }
+        
+        while (offset % falignment != 0)
+            ++offset;
+        
+        field.offset = offset;
+        offset += field.type.size;
+        *alignment = MAX(falignment, *alignment);
+    }
+    
+    if (offset == RDTypeSizeUnknown || *alignment == RDTypeAlignmentUnknown)
+        for (RDField *field in fields)
+            field.offset = RDFieldOffsetUnknown;
+    else
+        while (offset != RDTypeSizeUnknown && offset % *alignment != 0)
+            ++offset;
+    
+    *size = MAX(1, offset);
 }
 
 @end
@@ -751,6 +868,14 @@ NSUInteger parseNumber(const char *_Nonnull *_Nonnull encoding) {
 RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
     while (**encoding != '\0') {
         switch (**encoding) {
+            case RDSpecialTypeKindUnknown:
+                ++(*encoding);
+                return RDUnknownType.instance;
+                
+            case RDSpecialTypeKindVoid:
+                ++(*encoding);
+                return RDVoidType.instance;
+            
             case RDPrimitiveTypeKindClass:
             case RDPrimitiveTypeKindSelector:
             case RDPrimitiveTypeKindChar:
@@ -769,16 +894,14 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
             case RDPrimitiveTypeKindDouble:
             case RDPrimitiveTypeKindLongDouble:
             case RDPrimitiveTypeKindBool:
-            case RDPrimitiveTypeKindVoid:
             case RDPrimitiveTypeKindCString:
-            case RDPrimitiveTypeKindAtom:
-            case RDPrimitiveTypeKindUnknown: {
+            case RDPrimitiveTypeKindAtom: {
                 return [RDPrimitiveType instanceWithKind:(RDPrimitiveTypeKind)*((*encoding)++)];
             }
                 
-            case RDCompositeTypeKindObject: {
+            case RDSpecialTypeKindObject: {
                 ++(*encoding);
-                if (**encoding == RDPrimitiveTypeKindUnknown) {
+                if (**encoding == RDSpecialTypeKindUnknown) {
                     NSString *args = nil;
                     if (*(++(*encoding)) == RDTypeEncodingSymbolBlockArgsBegin)
                         args = parseString(encoding, RDTypeEncodingSymbolBlockArgsEnd);
@@ -792,43 +915,22 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 return [[RDObjectType alloc] initWithClassName:components.firstObject protocolNames:protocols];
             }
                 
-            case RDCompositeTypeKindPointer: {
-                ++(*encoding);
+            case RDCompositeTypeKindPointer:
+            case RDCompositeTypeKindConst:
+            case RDCompositeTypeKindAtomic:
+            case RDCompositeTypeKindComplex:
+            case RDCompositeTypeKindVector: {
+                RDCompositeTypeKind kind = (RDCompositeTypeKind)*((*encoding)++);
                 const char *e = *encoding;
-                if (RDType *type = parseType(encoding); type != nil)
-                    return [[RDPointerType alloc] initWithPointeeType:type];
-                
-                *encoding = e;
-                return [[RDPointerType alloc] initWithPointeeType:nil];
+                if (RDType *type = parseType(encoding); type != nil) {
+                    return [[RDCompositeType alloc] initWithKind:kind type:type];
+                } else {
+                    *encoding = e;
+                    return [[RDCompositeType alloc] initWithKind:kind type:RDUnknownType.instance];
+                }
             }
                 
-            case RDCompositeTypeKindConst: {
-                ++(*encoding);
-                RDType *type = parseType(encoding);
-                if (type == nil)
-                    return nil;
-                
-                return [[RDConstType alloc] initWithType:type];
-            }
-                
-            case RDCompositeTypeKindAtomic: {
-                ++(*encoding);
-                RDType *type = parseType(encoding);
-                if (type == nil)
-                    return nil;
-                
-                return [[RDAtomicType alloc] initWithType:type];
-            }
-            case RDCompositeTypeKindComplex: {
-                ++(*encoding);
-                RDType *type = parseType(encoding);
-                if (type == nil)
-                    return nil;
-                
-                return [[RDComplexType alloc] initWithType:type];
-            }
-                
-            case RDCompositeTypeKindBitfield: {
+            case RDSpecialTypeKindBitfield: {
                 ++(*encoding);
                 NSUInteger size = parseNumber(encoding);
                 return [[RDBitfieldType alloc] initWithSizeInBits:size];
@@ -890,10 +992,8 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 if (**encoding == cl)
                     ++(*encoding);
                 
-                if (isStruct)
-                    return [[RDStructType alloc] initWithName:name fields:fields];
-                else
-                    return [[RDUnionType alloc] initWithName:name fields:fields];
+                RDAggregateTypeKind kind = isStruct ? RDAggregateTypeKindStruct : RDAggregateTypeKindUnion;
+                return [[RDAggregateType alloc] initWithKind:kind named:name fields:fields];
             }
                 
             default: {

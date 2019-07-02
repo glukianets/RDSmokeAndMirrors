@@ -3,6 +3,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#define ENSURE(OBJECT, CLASS) ({ __auto_type o = (OBJECT); [o isKindOfClass:CLASS.self] ? (CLASS *)o : nil; })
+
 extern "C" id _Nullable objc_autorelease(id _Nullable value);
 extern "C" void objc_autoreleasePoolPop(void *pool);
 extern "C" void *objc_autoreleasePoolPush(void);
@@ -21,6 +23,10 @@ extern "C" id _Nullable objc_retainAutoreleasedReturnValue(id _Nullable value);
 extern "C" id _Nullable objc_retainBlock(id _Nullable value);
 extern "C" void objc_storeStrong(id _Nullable *_Nonnull object, id _Nullable value);
 extern "C" id objc_storeWeak(id _Nullable *_Nonnull object, id _Nullable value);
+
+static inline long rd_retainCount(id _Nullable value) {
+    return value ? 0 : CFGetRetainCount((__bridge CFTypeRef)value);
+}
 
 template<typename T, typename U>
 NSArray<U *> *_Nullable map_nn(NSArray<T *> *_Nullable source, U *_Nullable (^_Nonnull block)(T *_Nonnull)) {

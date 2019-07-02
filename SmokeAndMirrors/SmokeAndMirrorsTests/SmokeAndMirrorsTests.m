@@ -45,13 +45,29 @@
     NSString *cannary2 = [NSString stringWithFormat:@"Blue can%@!", @"nary"];
     NSString *cannary3 = [NSString stringWithFormat:@"Lying can%@!", @"nary"];
 
-    struct Trap { id obj; };
-    struct Trap t = {.obj=cannary1};
+    struct T { id obj; char tag[4]; };
+    struct T t = {.obj=cannary1, .tag="sup"};
+    
+    for (NSUInteger i = 0; i < 100; ++i) {
+        RDValue *value = [RDValue alloc];
+        NSLog(@"+%p - %ld", value, CFGetRetainCount((__bridge CFTypeRef)value));
+        if (i % 2 == 0)
+            value = [value initWithBytes:&t objCType:@encode(struct T)];
+        else
+            value = [value init];
+        NSLog(@"-%p - %ld", value, CFGetRetainCount((__bridge CFTypeRef)value));
+    }
 
     RDValue *value = RDValueBox(t);
     XCTAssertNotNil(value, @"Should create");
     XCTAssertEqual(value, value.copy, @"Should elide copy");
-
+    
+    NSLog(@"%@\n\n%@", value.debugDescription, value);
+    
+    NSString *c1 = nil;
+    RDValueGet(value[0], &c1);
+    XCTAssertEqual(c1, cannary1, @"Should extract value by index");
+    
     RDMutableValue *mvalue = [value mutableCopy];
     XCTAssertNotNil(mvalue, @"Should mutable copy");
 
@@ -65,6 +81,9 @@
     t.obj = cannary3;
     XCTAssert(RDValueGet(mvalue, &t), @"Should get");
     XCTAssertEqual(t.obj, cannary2, @"Should preserve value");
+    
+    value = nil;
+    mvalue = nil;
 }
 
 @end

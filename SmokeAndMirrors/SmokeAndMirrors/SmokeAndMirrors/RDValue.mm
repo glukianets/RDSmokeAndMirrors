@@ -14,12 +14,18 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 
 - (void)_value_retainBytes:(void *)bytes;
 - (void)_value_releaseBytes:(void *)bytes;
-
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info;
+- (NSString *)_value_formatWithBytes:(void *)bytes;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDValue()
+
+- (instancetype)_init NS_DESIGNATED_INITIALIZER;
+
 @end
 
 @implementation RDValue {
@@ -34,17 +40,16 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 
 + (instancetype)allocWithZone:(struct _NSZone *)zone {
     if (self == RDValue.self || self == RDMutableValue.self) {
-        static RDValue *instance = nil;
-        static RDMutableValue *mutableInstance = nil;
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            instance = class_createInstance(RDValue.self, 0);
-            mutableInstance = class_createInstance(RDMutableValue.self, 0);
-        });
-        return objc_retain(self == RDValue.self ? instance : mutableInstance);
+        static RDValue *instance = class_createInstance(RDValue.self, 0);
+        static RDMutableValue *mutableInstance = class_createInstance(RDMutableValue.self, 0);
+        return (self == RDValue.self ? instance : mutableInstance);
     } else {
         return [super alloc];
     }
+}
+
+- (void)dealloc {
+    [_type _value_releaseBytes:_data];
 }
 
 + (instancetype)valueWithBytes:(const void *)bytes ofType:(RDType *)type {
@@ -55,13 +60,18 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
     return [[self alloc] initWithBytes:bytes objCType:type];
 }
 
-- (instancetype)init {
+- (instancetype)_init {
     self = [super init];
     if (self) {
         _type = [RDUnknownType instance];
         _data = NULL;
     }
     return self;
+}
+
+- (instancetype)init {
+    static RDValue *instance = [(RDValue *)class_createInstance(self.class, 0) _init];
+    return instance;
 }
 
 - (instancetype)initWithBytes:(const void *)bytes objCType:(const char *)type {
@@ -145,7 +155,12 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:_type.format ?: @"%@", @"rd_value"];
+    return [NSString stringWithFormat:[self.type _value_formatWithBytes:_data],
+            [NSString stringWithFormat:@"value_at_%p", self]];
+}
+
+- (NSString *)debugDescription {
+    return [self.type _value_describeBytes:_data additionalInfo:nil];
 }
 
 - (const char *)objCType {
@@ -205,21 +220,51 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
     }
 }
 
+#pragma mark Subscripting
+
+- (RDValue *)objectAtIndexedSubscript:(NSUInteger)index {
+    if (RDArrayType *type = ENSURE(self.type, RDArrayType); type != nil) {
+        if (index < type.count)
+            return [RDValue valueWithBytes:(uint8_t *)_data + [type offsetForElementAtIndex:index] ofType:type.type];
+        else
+            return nil;
+
+    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+        if (index >= type.fields.count)
+            return nil;
+            
+        if (RDField *field = type.fields[index]; field != nil && field.type != nil && field.offset != RDFieldOffsetUnknown)
+            return [RDValue valueWithBytes:(uint8_t *)_data + field.offset ofType:field.type];
+        else
+            return nil;
+
+    } else {
+        return nil;
+    }
+}
+
+- (RDValue *)objectAtKeyedSubscript:(NSString *)key {
+    if (key == nil) {
+        return nil;
+    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+        for (RDField *field in type.fields)
+            if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
+                return [RDValue valueWithBytes:(uint8_t *)_data + field.offset ofType:field.type];
+
+        return nil;
+        
+    } else {
+        return nil;
+    }
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @implementation RDMutableValue
-
-- (BOOL)setValue:(void *)value size:(NSUInteger)size {
-    if (value == NULL || _data == NULL || _type == nil || _type.size != size)
-        return NO;
-    
-    [_type _value_releaseBytes:_data];
-    memcpy(_data, value, _type.size);
-    [_type _value_retainBytes:_data];
-    return YES;
-}
 
 - (BOOL)setValue:(void *)value objCType:(const char *)type {
     if (_data == NULL || value == NULL || type == NULL)
@@ -232,24 +277,76 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 }
 
 - (BOOL)setValue:(void *)value type:(RDType *)type {
-    BOOL isOk = _data != NULL
-             && value != NULL
-             && type != nil
-             && _type.size != RDTypeSizeUnknown
-             && _type.alignment != RDTypeAlignmentUnknown
-             && [_type isAssignableFromType:type];
-    
-    if (!isOk)
-        return NO;
+    return [self.class _setBytes:_data ofType:_type fromValue:value ofType:type];
+}
 
-    [_type _value_releaseBytes:_data];
-    memcpy(_data, value, _type.size);
-    [_type _value_retainBytes:_data];
+- (BOOL)setObject:(RDValue *)value atIndexedSubscript:(NSUInteger)index {
+    if (RDArrayType *type = ENSURE(self.type, RDArrayType); type != nil) {
+        if (index < type.count)
+            return [self.class _setBytes:(uint8_t *)_data + [type offsetForElementAtIndex:index]
+                                  ofType:type.type
+                               fromValue:value->_data
+                                  ofType:value->_type];
+        else
+            return NO;
+        
+    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+        if (index >= type.fields.count)
+            return NO;
+        
+        if (RDField *field = type.fields[index]; field != nil && field.type != nil && field.offset != RDFieldOffsetUnknown)
+            return [self.class _setBytes:(uint8_t *)_data + field.offset
+                                  ofType:field.type
+                               fromValue:value->_data
+                                  ofType:value->_type];
+        else
+            return NO;
+        
+    } else {
+        return NO;
+    }
+}
+
+- (BOOL)setObject:(RDValue *)value atKeyedSubscript:(NSString *)key {
+    if (key == nil) {
+        return NO;
+    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+        for (RDField *field in type.fields)
+            if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
+                return [self.class _setBytes:(uint8_t *)_data + field.offset
+                                      ofType:field.type
+                                   fromValue:value->_data ofType:value->_type];
+        
+        return NO;
+        
+    } else {
+        return NO;
+    }
+}
+
+#pragma mark Private
+
++ (BOOL)_setBytes:(void *)lhs ofType:(RDType *)lhsType fromValue:(void *)rhs ofType:(RDType *)rhsType {
+    BOOL isSafe = lhs != NULL
+               && rhs != NULL
+               && lhsType != nil
+               && rhsType != nil
+               && lhsType.size != RDTypeSizeUnknown
+               && [lhsType isAssignableFromType:rhsType];
+    
+    if (!isSafe)
+        return NO;
+    
+    [lhsType _value_releaseBytes:lhs];
+    memcpy(lhs, rhs, lhsType.size);
+    [lhsType _value_retainBytes:rhs];
     return YES;
 }
 
 @end
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @implementation RDType(RDValue)
@@ -262,6 +359,22 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
     // Do nothing for non-retainable types by default
 }
 
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    return nil;
+}
+
+- (NSString *)_value_formatWithBytes:(void *)bytes {
+    NSMutableArray *more = [NSMutableArray array];
+    NSString *desc = [self _value_describeBytes:bytes additionalInfo:more];
+    NSString *decl = self.format;
+    return [NSString stringWithFormat:@"%@ = %@;\n%@", decl, desc, [more componentsJoinedByString:@"\n\n"]];
+}
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@interface RDUnknownType(RDValue)
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -277,6 +390,30 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 
 - (void)_value_releaseBytes:(void *_Nonnull)bytes {
     objc_release((__bridge id)*(void **)bytes);
+}
+
+- (NSString *)_value_describeBytes:(void *)bytes {
+    return [(__bridge id)*(void **)bytes description];
+}
+
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    if (NSString *description = [(__bridge id)*(void **)bytes description]; description != nil)
+        [info addObject:[NSString stringWithFormat:@"Printing description of (%@)%p:\n%@", self.description, *(void **)bytes, description]];
+    
+    return [NSString stringWithFormat:@"(%@)%p", self.description, *(void **)bytes];
+}
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@interface RDVoidType(RDValue)
+@end
+
+@implementation RDVoidType(RDValue)
+
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    return @"void";
 }
 
 @end
@@ -298,29 +435,89 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
         objc_release((__bridge id)*(void **)bytes);
 }
 
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    if (NSString *description = [(__bridge id)*(void **)bytes description]; description != nil)
+        [info addObject:[NSString stringWithFormat:@"Printing description of (%@)%p:\n%@", self.description, *(void **)bytes, description]];
+    
+    if (void *ptr = *(void **)bytes; ptr != NULL)
+        return [NSString stringWithFormat:@"(%@)%p", self.description, ptr];
+    else
+        return @"nil";
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDStructType(RDValue)
+@interface RDPrimitiveType(RDValue)
 @end
 
-@implementation RDStructType(RDValue)
+@implementation RDPrimitiveType(RDValue)
 
-- (void)_value_retainBytes:(void *)bytes {
-    if (bytes != NULL)
-        for (RDField *field in self.fields)
-            if (size_t offset = field.offset; offset != RDFieldOffsetUnknown)
-                [field.type _value_retainBytes:(char *)bytes + offset];
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    switch (self.kind) {
+        case RDPrimitiveTypeKindClass:
+            return [NSString stringWithFormat:@"%@.self", NSStringFromClass(*(Class *)bytes)];
+        case RDPrimitiveTypeKindSelector:
+            return [NSString stringWithFormat:@"@selector(%s)", sel_getName(*(SEL *)bytes)];
+        case RDPrimitiveTypeKindCString:
+            return [NSString stringWithFormat:@"c string at \"%p\"", *(const char **)bytes];
+        case RDPrimitiveTypeKindAtom:
+            return [NSString stringWithFormat:@"?"];
+        case RDPrimitiveTypeKindChar:
+            return [NSString stringWithFormat:@"'%c'", *(char *)bytes];
+        case RDPrimitiveTypeKindUnsignedChar:
+            return [NSString stringWithFormat:@"(unsigned char)'%c'", *(unsigned char *)bytes];
+        case RDPrimitiveTypeKindBool:
+            return [NSString stringWithFormat:@"%s", *(unsigned char *)bytes ? "true" : "false"];
+        case RDPrimitiveTypeKindShort:
+            return [NSString stringWithFormat:@"(short)%d", *(short *)bytes];
+        case RDPrimitiveTypeKindUnsignedShort:
+            return [NSString stringWithFormat:@"(unsigned short)%du", *(unsigned short *)bytes];
+        case RDPrimitiveTypeKindInt:
+            return [NSString stringWithFormat:@"%d", *(int *)bytes];
+        case RDPrimitiveTypeKindUnsignedInt:
+            return [NSString stringWithFormat:@"%du", *(unsigned int *)bytes];
+        case RDPrimitiveTypeKindLong:
+            return [NSString stringWithFormat:@"%ldl", *(long *)bytes];
+        case RDPrimitiveTypeKindUnsignedLong:
+            return [NSString stringWithFormat:@"%luul", *(unsigned long *)bytes];
+        case RDPrimitiveTypeKindLongLong:
+            return [NSString stringWithFormat:@"%lldll", *(long long int *)bytes];
+        case RDPrimitiveTypeKindUnsignedLongLong:
+            return [NSString stringWithFormat:@"%lluull", *(unsigned long long *)bytes];
+        case RDPrimitiveTypeKindInt128:
+            return [NSString stringWithFormat:@"(int128_t)%lld", (long long)*(__int128_t *)bytes];
+        case RDPrimitiveTypeKindUnsignedInt128:
+            return [NSString stringWithFormat:@"(uint128_t)%llu", (unsigned long long)*(__uint128_t *)bytes];
+        case RDPrimitiveTypeKindFloat:
+            return [NSString stringWithFormat:@"%ff", *(float *)bytes];
+        case RDPrimitiveTypeKindDouble:
+            return [NSString stringWithFormat:@"%f", *(double *)bytes];
+        case RDPrimitiveTypeKindLongDouble:
+            return [NSString stringWithFormat:@"%Lfl", *(long double *)bytes];
+    }
+    return nil;
 }
 
-- (void)_value_releaseBytes:(void *)bytes {
-    if (bytes != NULL)
-        for (RDField *field in self.fields)
-            if (size_t offset = field.offset; offset != RDFieldOffsetUnknown)
-                [field.type _value_releaseBytes:(char *)bytes + offset];
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@interface RDCompositeType(RDValue)
+@end
+
+@implementation RDCompositeType(RDValue)
+
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    return [self.type _value_describeBytes:bytes additionalInfo:info];
 }
 
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@interface RDBitfieldType(RDValue)
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -334,14 +531,62 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
     if (bytes != NULL)
         for (NSUInteger i = 0; i < self.count; ++i)
             if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDFieldOffsetUnknown)
-                [self.type _value_retainBytes:(char *)bytes + offset];
+                [self.type _value_retainBytes:(uint8_t *)bytes + offset];
 }
 
 - (void)_value_releaseBytes:(void *)bytes {
     if (bytes != NULL)
         for (NSUInteger i = 0; i < self.count; ++i)
             if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDFieldOffsetUnknown)
-                [self.type _value_releaseBytes:(char *)bytes + offset];
+                [self.type _value_releaseBytes:(uint8_t *)bytes + offset];
+}
+
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    NSMutableArray<NSString *> *values = [NSMutableArray array];
+    for (NSUInteger i = 0; i < self.count; ++i)
+        [values addObject:[self.type _value_describeBytes:(uint8_t *)bytes + [self offsetForElementAtIndex:i] additionalInfo:info]];
+    return [NSString stringWithFormat:@"{ %@ }", [values componentsJoinedByString:@", "]];
 }
 
 @end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@interface RDAggregateType(RDValue)
+@end
+
+@implementation RDAggregateType(RDValue)
+
+- (void)_value_retainBytes:(void *)bytes {
+    if (self.kind == RDAggregateTypeKindStruct)
+        if (bytes != NULL)
+            for (RDField *field in self.fields)
+                if (size_t offset = field.offset; offset != RDFieldOffsetUnknown)
+                    [field.type _value_retainBytes:(uint8_t *)bytes + offset];
+}
+
+- (void)_value_releaseBytes:(void *)bytes {
+    if (self.kind == RDAggregateTypeKindStruct)
+        if (bytes != NULL)
+            for (RDField *field in self.fields)
+                if (size_t offset = field.offset; offset != RDFieldOffsetUnknown)
+                    [field.type _value_releaseBytes:(uint8_t *)bytes + offset];
+}
+
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+    NSMutableArray<NSString *> *values = [NSMutableArray array];
+    for (NSUInteger i = 0; i < self.fields.count; ++i)
+        if (RDField *field = self.fields[i]; field.offset != RDFieldOffsetUnknown)
+            [values addObject:[NSString stringWithFormat:@".%@ = %@",
+                               field.name ?: [NSString stringWithFormat:@"field%zu", i],
+                               [field.type _value_describeBytes:(uint8_t *)bytes + field.offset additionalInfo:info]]];
+
+    return [NSString stringWithFormat:@"(%@%@) { %@ }",
+                                      self.kind == RDAggregateTypeKindUnion ? @"union" : @"struct",
+                                      self.name ? [NSString stringWithFormat:@" %@", self.name] : @"",
+                                      [values componentsJoinedByString:@", "]];
+}
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

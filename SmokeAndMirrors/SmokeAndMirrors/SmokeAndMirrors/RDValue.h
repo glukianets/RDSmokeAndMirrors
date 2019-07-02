@@ -21,7 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable instancetype)initWithBytes:(const void *)bytes objCType:(const char *)type;
 - (nullable instancetype)initWithBytes:(const void *)bytes ofType:(RDType *)type NS_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder *)coder NS_DESIGNATED_INITIALIZER;
-- (BOOL)getValue:(void *)value size:(NSUInteger)size;
 - (BOOL)getValue:(void *)value type:(RDType *)type;
 - (BOOL)getValue:(void *)value objCType:(const char *)type;
 
@@ -30,13 +29,18 @@ NS_ASSUME_NONNULL_BEGIN
 - (RDMutableValue *)mutableCopy;
 - (RDMutableValue *)mutableCopyWithZone:(nullable NSZone *)zone;
 
+- (nullable RDValue *)objectAtIndexedSubscript:(NSUInteger)index;
+- (nullable RDValue *)objectAtKeyedSubscript:(nullable NSString *)index;
+
 @end
 
 @interface RDMutableValue : RDValue
 
-- (BOOL)setValue:(void *)value size:(NSUInteger)size;
 - (BOOL)setValue:(void *)value objCType:(const char *)type;
 - (BOOL)setValue:(void *)value type:(RDType *)type;
+
+- (BOOL)setObject:(RDValue *)value atIndexedSubscript:(NSUInteger)index;
+- (BOOL)setObject:(RDValue *)value atKeyedSubscript:(nullable NSString *)key;
 
 @end
 

@@ -15,19 +15,22 @@ typedef NS_ENUM(char, RDTypeEncodingSymbol) {
     RDTypeEncodingSymbolQuote               = '"',
 };
 
+typedef NS_ENUM(char, RDSpecialTypeKind) {
+    RDSpecialTypeKindUnknown                = '?',
+    RDSpecialTypeKindVoid                   = 'v',
+    RDSpecialTypeKindObject                 = '@',
+    RDSpecialTypeKindBitfield               = 'b',
+};
+
 typedef NS_ENUM(char, RDCompositeTypeKind) {
-    RDCompositeTypeKindObject               = '@',
     RDCompositeTypeKindPointer              = '^',
-    RRDCompositeTypeKindVector              = '!',
-    RDCompositeTypeKindBitfield             = 'b',
+    RDCompositeTypeKindVector               = '!',
     RDCompositeTypeKindComplex              = 'j',
     RDCompositeTypeKindAtomic               = 'A',
     RDCompositeTypeKindConst                = 'r',
 };
 
 typedef NS_ENUM(char, RDPrimitiveTypeKind) {
-    RDPrimitiveTypeKindUnknown              = '?',
-    RDPrimitiveTypeKindVoid                 = 'v',
     RDPrimitiveTypeKindClass                = '#',
     RDPrimitiveTypeKindSelector             = ':',
     RDPrimitiveTypeKindCString              = '*',
@@ -48,6 +51,13 @@ typedef NS_ENUM(char, RDPrimitiveTypeKind) {
     RDPrimitiveTypeKindFloat                = 'f',
     RDPrimitiveTypeKindDouble               = 'd',
     RDPrimitiveTypeKindLongDouble           = 'D',
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef NS_ENUM(char, RDAggregateTypeKind) {
+    RDAggregateTypeKindStruct               = '{',
+    RDAggregateTypeKindUnion                = '(',
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,8 +119,8 @@ extern size_t const RDTypeAlignmentUnknown;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDPrimitiveType : RDType
-@property (nonatomic, readonly) RDPrimitiveTypeKind kind;
+@interface RDVoidType : RDType
+@property (nonatomic, readonly, class) RDUnknownType *instance;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,26 +137,15 @@ extern size_t const RDTypeAlignmentUnknown;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDPointerType : RDType
-@property (nonatomic, readonly, nullable) RDType *type;
+@interface RDPrimitiveType : RDType
+@property (nonatomic, readonly) RDPrimitiveTypeKind kind;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDConstType : RDType
-@property (nonatomic, readonly, nullable) RDType *type;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDAtomicType : RDType
-@property (nonatomic, readonly, nullable) RDType *type;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDComplexType : RDType
-@property (nonatomic, readonly, nullable) RDType *type;
+@interface RDCompositeType : RDType
+@property (nonatomic, readonly) RDCompositeTypeKind kind;
+@property (nonatomic, readonly) RDType *type;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -177,14 +176,8 @@ extern size_t const RDFieldOffsetUnknown;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDStructType : RDType
-@property (nonatomic, readonly, nullable) NSString *name;
-@property (nonatomic, readonly, nullable) NSArray<RDField *> *fields;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDUnionType : RDType
+@interface RDAggregateType : RDType
+@property (nonatomic, readonly) RDAggregateTypeKind kind;
 @property (nonatomic, readonly, nullable) NSString *name;
 @property (nonatomic, readonly, nullable) NSArray<RDField *> *fields;
 @end
