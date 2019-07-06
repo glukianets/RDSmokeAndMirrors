@@ -3,8 +3,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#define ENSURE(OBJECT, CLASS) ({ __auto_type o = (OBJECT); [o isKindOfClass:CLASS.self] ? (CLASS *)o : nil; })
-
 extern "C" id _Nullable objc_autorelease(id _Nullable value);
 extern "C" void objc_autoreleasePoolPop(void *pool);
 extern "C" void *objc_autoreleasePoolPush(void);

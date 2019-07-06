@@ -223,13 +223,13 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 #pragma mark Subscripting
 
 - (RDValue *)objectAtIndexedSubscript:(NSUInteger)index {
-    if (RDArrayType *type = ENSURE(self.type, RDArrayType); type != nil) {
+    if (RDArrayType *type = RD_CAST(self.type, RDArrayType); type != nil) {
         if (index < type.count)
             return [RDValue valueWithBytes:(uint8_t *)_data + [type offsetForElementAtIndex:index] ofType:type.type];
         else
             return nil;
 
-    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+    } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
         if (index >= type.fields.count)
             return nil;
             
@@ -246,7 +246,7 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 - (RDValue *)objectAtKeyedSubscript:(NSString *)key {
     if (key == nil) {
         return nil;
-    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+    } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
         for (RDField *field in type.fields)
             if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
                 return [RDValue valueWithBytes:(uint8_t *)_data + field.offset ofType:field.type];
@@ -281,7 +281,7 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 }
 
 - (BOOL)setObject:(RDValue *)value atIndexedSubscript:(NSUInteger)index {
-    if (RDArrayType *type = ENSURE(self.type, RDArrayType); type != nil) {
+    if (RDArrayType *type = RD_CAST(self.type, RDArrayType); type != nil) {
         if (index < type.count)
             return [self.class _setBytes:(uint8_t *)_data + [type offsetForElementAtIndex:index]
                                   ofType:type.type
@@ -290,7 +290,7 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
         else
             return NO;
         
-    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+    } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
         if (index >= type.fields.count)
             return NO;
         
@@ -310,7 +310,7 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 - (BOOL)setObject:(RDValue *)value atKeyedSubscript:(NSString *)key {
     if (key == nil) {
         return NO;
-    } else if (RDAggregateType *type = ENSURE(self.type, RDAggregateType); type != nil) {
+    } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
         for (RDField *field in type.fields)
             if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
                 return [self.class _setBytes:(uint8_t *)_data + field.offset
