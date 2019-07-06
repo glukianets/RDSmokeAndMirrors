@@ -330,8 +330,8 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 - (BOOL)isEqualToType:(RDType *)type {
     return [super isEqualToType:type]
         || [type isKindOfClass:RDObjectType.self]
-        && areEqual((RDObjectType *)type.className, self.className)
-        && areEqual((RDObjectType *)type, self.protocolNames);
+        && areEqual(((RDObjectType *)type).className, self.className)
+        && areEqual(((RDObjectType *)type).protocolNames, self.protocolNames);
 }
 
 - (BOOL)isAssignableFromType:(RDType *)type {
