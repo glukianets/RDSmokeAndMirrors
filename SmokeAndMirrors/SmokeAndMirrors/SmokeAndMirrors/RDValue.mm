@@ -16,7 +16,29 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 - (void)_value_releaseBytes:(void *)bytes;
 - (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info;
 - (NSString *)_value_formatWithBytes:(void *)bytes;
+
 @end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
+    BOOL isSafe = src != NULL
+               && dst != NULL
+               && srcType != nil
+               && dstType != nil
+               && dstType.size != RDTypeSizeUnknown
+               && dstType.alignment != RDTypeAlignmentUnknown
+               && [dstType isAssignableFromType:srcType]
+               && (uintptr_t)dst % dstType.alignment == 0;
+    
+    if (!isSafe)
+        return NO;
+    
+    [dstType _value_releaseBytes:dst];
+    memcpy(dst, src, dstType.size);
+    [dstType _value_retainBytes:dst];
+    return YES;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,21 +159,7 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 }
 
 - (BOOL)getValue:(void *)value type:(RDType *)type {
-    BOOL isOk = _data != NULL
-             && value != NULL
-             && type != nil
-             && type.size != RDTypeSizeUnknown
-             && type.alignment != RDTypeAlignmentUnknown
-             && [type isAssignableFromType:_type]
-             && (uintptr_t)value % type.alignment == 0;
-    
-    if (!isOk)
-        return NO;
-    
-    [type _value_releaseBytes:value];
-    memcpy(value, _data, type.size);
-    [type _value_retainBytes:value];
-    return YES;
+    return copy(value, type, _data, _type);
 }
 
 - (NSString *)description {
@@ -277,16 +285,13 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
 }
 
 - (BOOL)setValue:(void *)value type:(RDType *)type {
-    return [self.class _setBytes:_data ofType:_type fromValue:value ofType:type];
+    return copy(_data, _type, value, type);
 }
 
 - (BOOL)setObject:(RDValue *)value atIndexedSubscript:(NSUInteger)index {
     if (RDArrayType *type = RD_CAST(self.type, RDArrayType); type != nil) {
         if (index < type.count)
-            return [self.class _setBytes:(uint8_t *)_data + [type offsetForElementAtIndex:index]
-                                  ofType:type.type
-                               fromValue:value->_data
-                                  ofType:value->_type];
+            return copy((uint8_t *)_data + [type offsetForElementAtIndex:index], type.type, value->_data, value->_type);
         else
             return NO;
         
@@ -295,10 +300,7 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
             return NO;
         
         if (RDField *field = type.fields[index]; field != nil && field.type != nil && field.offset != RDFieldOffsetUnknown)
-            return [self.class _setBytes:(uint8_t *)_data + field.offset
-                                  ofType:field.type
-                               fromValue:value->_data
-                                  ofType:value->_type];
+            return copy((uint8_t *)_data + field.offset, field.type, value->_data, value->_type);
         else
             return NO;
         
@@ -313,34 +315,13 @@ static constexpr size_t kAssumendInstanceSizeBytes = 32;
     } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
         for (RDField *field in type.fields)
             if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
-                return [self.class _setBytes:(uint8_t *)_data + field.offset
-                                      ofType:field.type
-                                   fromValue:value->_data ofType:value->_type];
+                return copy((uint8_t *)_data + field.offset, field.type, value->_data, value->_type);
         
         return NO;
         
     } else {
         return NO;
     }
-}
-
-#pragma mark Private
-
-+ (BOOL)_setBytes:(void *)lhs ofType:(RDType *)lhsType fromValue:(void *)rhs ofType:(RDType *)rhsType {
-    BOOL isSafe = lhs != NULL
-               && rhs != NULL
-               && lhsType != nil
-               && rhsType != nil
-               && lhsType.size != RDTypeSizeUnknown
-               && [lhsType isAssignableFromType:rhsType];
-    
-    if (!isSafe)
-        return NO;
-    
-    [lhsType _value_releaseBytes:lhs];
-    memcpy(lhs, rhs, lhsType.size);
-    [lhsType _value_retainBytes:rhs];
-    return YES;
 }
 
 @end
