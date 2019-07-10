@@ -2,6 +2,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef size_t RDTypeSize;
+extern RDTypeSize const RDTypeSizeUnknown;
+
+typedef ptrdiff_t RDTypeAlign;
+extern RDTypeAlign const RDTypeAlignUnknown;
+
+typedef ptrdiff_t RDOffset;
+extern RDOffset const RDOffsetUnknown;
+
 typedef NS_ENUM(char, RDTypeEncodingSymbol) {
     RDTypeEncodingSymbolArrayBegin          = '[',
     RDTypeEncodingSymbolArrayEnd            = ']',
@@ -90,9 +99,6 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-extern size_t const RDTypeSizeUnknown;
-extern size_t const RDTypeAlignmentUnknown;
-
 @interface RDType : NSObject<NSSecureCoding>
 
 @property (nonatomic, readonly) size_t size;
@@ -166,20 +172,22 @@ extern size_t const RDTypeAlignmentUnknown;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-extern size_t const RDFieldOffsetUnknown;
+typedef struct {
+    RDType *type;
+    NSString *name;
+    RDOffset offset;
+} RDField;
 
-@interface RDField : NSObject
-@property (nonatomic, readonly) NSString *name;
-@property (nonatomic, readonly) size_t offset;
-@property (nonatomic, readonly, nullable) RDType *type;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+RD_FINAL_CLASS
 @interface RDAggregateType : RDType
 @property (nonatomic, readonly) RDAggregateTypeKind kind;
 @property (nonatomic, readonly, nullable) NSString *name;
-@property (nonatomic, readonly, nullable) NSArray<RDField *> *fields;
+@property (nonatomic, readonly) NSUInteger count;
+
+- (nullable RDField *)fieldAtIndex:(NSUInteger)index;
+- (nullable RDField *)fieldAtOffset:(RDOffset)offset;
+- (nullable RDField *)fieldWithName:(NSString *)name;
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

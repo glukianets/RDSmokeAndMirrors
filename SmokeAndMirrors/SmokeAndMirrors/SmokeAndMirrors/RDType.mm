@@ -5,10 +5,11 @@
 #include <initializer_list>
 #include <algorithm>
 #include <utility>
+#include <vector>
 
-size_t const RDTypeSizeUnknown = (size_t)0 - 1;
-size_t const RDTypeAlignmentUnknown = (size_t)0 - 1;
-size_t const RDFieldOffsetUnknown = (size_t)0 -1;
+RDTypeSize const RDTypeSizeUnknown = (size_t)0 - 1;
+RDTypeAlign const RDTypeAlignUnknown = (size_t)0 - 1;
+RDOffset const RDOffsetUnknown = (size_t)0 -1;
 
 static size_t parseCountSucceded = 0;
 static size_t parseCountFailed = 0;
@@ -126,7 +127,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 + (instancetype)instance {
     static RDUnknownType *instance = [[RDUnknownType alloc] initWithByteSize:RDTypeSizeUnknown
-                                                                   alignment:RDTypeAlignmentUnknown];
+                                                                   alignment:RDTypeAlignUnknown];
     return instance;
 }
 
@@ -364,7 +365,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDCompositeType
 
 - (instancetype)initWithKind:(RDCompositeTypeKind)kind type:(RDType *)type {
-    size_t size = RDTypeSizeUnknown, alignment = RDTypeAlignmentUnknown;
+    size_t size = RDTypeSizeUnknown, alignment = RDTypeAlignUnknown;
     switch (kind) {
         case RDCompositeTypeKindPointer:
             size = sizeof(void *);
@@ -468,16 +469,16 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 - (size_t)offsetForElementAtIndex:(NSUInteger)index {
     if (index >= self.count)
-        return RDFieldOffsetUnknown;
+        return RDOffsetUnknown;
 
     if (self.type == nil)
-        return RDFieldOffsetUnknown;
+        return RDOffsetUnknown;
     
     size_t size = self.type.size;
     size_t alignment = self.type.alignment;
 
     if (size == 0 || size == RDTypeSizeUnknown || alignment == RDTypeSizeUnknown)
-        return RDFieldOffsetUnknown;
+        return RDOffsetUnknown;
     
     while (size % alignment != 0)
         ++size;
@@ -508,164 +509,190 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@implementation RDField
-
-- (instancetype)initWithName:(NSString *)name type:(RDType *)type {
-    self = [super init];
-    if (self) {
-        _name = name.copy;
-        _type = type;
-    }
-    return self;
+BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
+    return lhs == rhs
+        || lhs != nil
+        && rhs != nil
+        && lhs->offset == rhs->offset
+        && areEqual(lhs->name, rhs->name)
+        && areEqual(lhs->type, rhs->type);
 }
-
-- (NSString *)description {
-    if (NSString *fmt = self.type.format; fmt.length > 1)
-        return [[NSString stringWithFormat:fmt, self.name ?: @"_"] stringByAppendingString:@";"];
-    else
-        return self.name ?: @"_";
-}
-
-- (void)setOffset:(size_t)offset {
-    _offset = offset;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @implementation RDAggregateType
 
-- (instancetype)initWithKind:(RDAggregateTypeKind)kind named:(NSString *)name fields:(NSArray<RDField *> *)fields {
++ (instancetype)alloc {
+    static RDAggregateType *instance = class_createInstance(self, 0);
+    return instance;
+}
+
+- (instancetype)initWithKind:(RDAggregateTypeKind)kind name:(NSString *)name fields:(RDField *)fields count:(NSUInteger)count {
     size_t size, alignment;
     switch (kind) {
         case RDAggregateTypeKindStruct:
-            [self.class size:&size alignment:&alignment forStructTypeWithFields:fields];
+            [self.class layoutStructTypeWithFields:fields count:count size:&size alignment:&alignment];
             break;
         case RDAggregateTypeKindUnion:
-            [self.class size:&size alignment:&alignment forUnionTypeWithFields:fields];
+            [self.class layoutUnionTypeWithFields:fields count:count size:&size alignment:&alignment];
             break;
     }
     
+    self = createFlexArrayInstance<RDField>(self.class, count);
     self = [super initWithByteSize:size alignment:alignment];
     if (self) {
         _kind = kind;
         _name = name.copy;
-        _fields = fields.copy;
+        _count = count;
+        for (NSUInteger i = 0; i < count; ++i)
+            setFlexArrayElement(self, i, fields[i]);
     }
     return self;
 }
 
-- (NSString *)format {
-    NSString *fields = [self.fields componentsJoinedByString:@" "];
-    NSString *name = self.name ?: @"";
-    NSString *tag = ^NSString *(RDAggregateTypeKind kind) {
-        switch (kind) {
-            case RDAggregateTypeKindStruct: return @"struct";
-            case RDAggregateTypeKindUnion: return @"union";
-        }
-    }(self.kind);
-
-    return [NSString stringWithFormat:@"%@ %@ { %@ } %%@", tag, name, fields];
+- (RDField *)fieldAtIndex:(NSUInteger)index {
+    if (index >= self.count)
+        return nil;
+    
+    return getFlexArrayElement<RDField>(self, index);
 }
 
-- (BOOL)isEqualToType:(RDType *)type {
-    return [type isKindOfClass:RDAggregateType.class]
-        && areEqual(self.name, ((RDAggregateType *)type).name)
-        && areEqual(self.fields, ((RDAggregateType *)type).fields);
+- (RDField *)fieldAtOffset:(RDOffset)offset {
+    if (offset == RDOffsetUnknown)
+        return nil;
+    
+    for (NSUInteger i = 0; i < self.count; ++i)
+        if (RDField *field = [self fieldAtIndex:i]; field != NULL && field->offset == offset)
+            return field;
+    
+    return nil;
+}
+
+- (RDField *)fieldWithName:(NSString *)name {
+    if (name.length == 0)
+        return nil;
+    
+    for (NSUInteger i = 0; i < self.count; ++i)
+        if (RDField *field = [self fieldAtIndex:i]; field != NULL && [field->name isEqualToString:name])
+            return field;
+    
+    return nil;
+}
+
+- (NSString *)format {
+    NSMutableString *fields = [NSMutableString string];
+    for (NSUInteger i = 0; i < self.count; ++i)
+        if (RDField *field = [self fieldAtIndex:i]; field != NULL)
+            [fields appendFormat:[field->type.format stringByAppendingString:@"; "] ?: @"%@; ", field->name ?: @"_"];
+
+    NSString *name = self.name ?: @"";
+    NSString *tag = ({
+        NSString *str = nil;
+        switch (self.kind) {
+            case RDAggregateTypeKindStruct:
+                str = @"struct";
+                break;
+                
+            case RDAggregateTypeKindUnion:
+                str = @"union";
+                break;
+        }
+        str;
+    });
+
+    return [NSString stringWithFormat:@"%@ %@ { %@} %%@", tag, name, fields];
+}
+
+- (BOOL)isEqualToType:(RDType *)other {
+    if (self == other)
+        return YES;
+    
+    RDAggregateType *type = RD_CAST(other, RDAggregateType);
+    if (type == nil)
+        return NO;
+    
+    if (self.kind != type.kind || !areEqual(self.name, type.name) || self.count != type.count)
+        return NO;
+
+    for (NSUInteger i = 0; i < self.count; ++i)
+        if (RDField *lhs = [self fieldAtIndex:i], *rhs = [type fieldAtIndex:i]; !RDFieldsEqual(lhs, rhs))
+            return NO;
+
+    return YES;
 }
 
 - (BOOL)isAssignableFromType:(RDType *)other {
-    if (![other isKindOfClass:RDAggregateType.self])
-        return NO;
-    
-    RDAggregateType *type = (RDAggregateType *)other;
-    
-    if (self.kind != type.kind)
+    RDAggregateType *type = RD_CAST(other, RDAggregateType);
+    if (type == nil || self.kind != type.kind)
         return NO;
     
     switch (self.kind) {
         case RDAggregateTypeKindStruct: {
-            auto fieldAtOffset = ^RDField *(NSArray<RDField *> *fields, size_t offset) {
-                if (offset == RDFieldOffsetUnknown)
-                    return nil;
-                
-                for (RDField *field in fields)
-                    if (field.offset == offset)
-                        return field;
-                
-                return nil;
-            };
-            
-            for (RDField *field in self.fields)
-                if (size_t offset = field.offset; offset == RDFieldOffsetUnknown)
-                    return NO;
-                else if (RDType *fieldType = fieldAtOffset(type.fields, offset).type; fieldType == nil)
-                    return NO;
-                else if (![field.type isAssignableFromType:fieldType])
-                    return NO;
-                else
-                    continue;
-            
+            if (self.count != type.count)
+                return NO;
+            else
+                for (NSUInteger i = 0; i < self.count; ++i)
+                    if (RDField *field = [self fieldAtIndex:i]; field == NULL)
+                        return NO;
+                    else if (RDOffset offset = field->offset; offset == RDOffsetUnknown)
+                        return NO;
+                    else if (RDField *otherField = [type fieldAtOffset:offset]; otherField == NULL)
+                        return NO;
+                    else if (RDType *fieldType = otherField->type; fieldType == nil)
+                        return NO;
+                    else if (![field->type isAssignableFromType:fieldType])
+                        return NO;
+                    else
+                        continue;
+    
             return YES;
         }
 
         case RDAggregateTypeKindUnion: {
-            auto fieldMatching = ^RDField *(NSArray<RDField *> *fields, RDType *type) {
-                if (type == nil)
-                    return nil;
-                
-                for (RDField *field in fields)
-                    if ([field.type isAssignableFromType:type])
-                        return field;
-                
-                return nil;
-            };
+            for (NSUInteger i = 0; i < type.count; ++i)
+                if (RDField *otherField = [type fieldAtIndex:i]; otherField != NULL)
+                    for (NSUInteger i = 0; i < self.count; ++i)
+                        if (RDField *field = [self fieldAtIndex:i]; field == NULL || ![field->type isAssignableFromType:otherField->type])
+                            return NO;
 
-            for (RDField *field in type.fields)
-                if (fieldMatching(self.fields, field.type) == nil)
-                    return NO;
-            
             return YES;
         }
     }
 }
 
-+ (void)size:(size_t *)size alignment:(size_t *)alignment forUnionTypeWithFields:(NSArray<RDField *> *)fields {
++ (void)layoutUnionTypeWithFields:(RDField *)fields count:(NSUInteger)count size:(size_t *)size alignment:(size_t *)alignment {
     *size = 1;
     *alignment = 1;
-    for (RDField *field in fields) {
-        *size = MAX(field.type.size, *size);
-        *alignment = MAX(field.type.alignment, *alignment);
-        field.offset = 0u;
+    for (NSUInteger i = 0; i < count; ++i) {
+        *size = MAX(fields[i].type.size, *size);
+        *alignment = MAX(fields[i].type.alignment, *alignment);
+        fields[i].offset = 0u;
     }
 }
 
-+ (void)size:(size_t *)size alignment:(size_t *)alignment forStructTypeWithFields:(NSArray<RDField *> *)fields {
++ (void)layoutStructTypeWithFields:(RDField *)fields count:(NSUInteger)count size:(size_t *)size alignment:(size_t *)alignment {
     size_t offset = 0;
     *alignment = 1;
     
-    for (RDField *field in fields) {
-        size_t falignment = field.type.alignment;
-        size_t fsize = field.type.size;
+    for (NSUInteger i = 0; i < count; ++i) {
+        size_t falignment = fields[i].type.alignment;
+        size_t fsize = fields[i].type.size;
         
-        if (field.type == nil || falignment == RDTypeAlignmentUnknown || fsize == RDTypeSizeUnknown) {
+        if (fields[i].type == nil || falignment == RDTypeAlignUnknown || fsize == RDTypeSizeUnknown) {
             offset = RDTypeSizeUnknown;
-            *alignment = RDTypeAlignmentUnknown;
+            *alignment = RDTypeAlignUnknown;
             break;
         }
         
         while (offset % falignment != 0)
             ++offset;
         
-        field.offset = offset;
-        offset += field.type.size;
+        fields[i].offset = offset;
+        offset += fields[i].type.size;
         *alignment = MAX(falignment, *alignment);
     }
     
-    if (offset == RDTypeSizeUnknown || *alignment == RDTypeAlignmentUnknown)
-        for (RDField *field in fields)
-            field.offset = RDFieldOffsetUnknown;
+    if (offset == RDTypeSizeUnknown || *alignment == RDTypeAlignUnknown)
+        for (NSUInteger i = 0; i < count; ++i)
+            fields[i].offset = RDOffsetUnknown;
     else
         while (offset != RDTypeSizeUnknown && offset % *alignment != 0)
             ++offset;
@@ -958,16 +985,6 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 bool isStruct = op == RDTypeEncodingSymbolStructBegin;
                 char cl = (isStruct ? RDTypeEncodingSymbolStructEnd : RDTypeEncodingSymbolUnionEnd);
                 
-                RDField *(^parseField)(const char *_Nonnull *_Nonnull) = ^RDField *(const char *_Nonnull *_Nonnull encoding) {
-                    NSString *name = parseQuotedString(encoding);
-                    if (**encoding == RDTypeEncodingSymbolQuote || **encoding == cl)
-                        return [[RDField alloc] initWithName:name type:nil];
-                    else if (RDType *type = parseType(encoding); type != nil)
-                        return [[RDField alloc] initWithName:name type:type];
-                    else
-                        return nil;
-                };
-                
                 static constexpr size_t LIMIT = 8192;
                 char buff[LIMIT] = {};
                 unsigned index = 0;
@@ -976,24 +993,27 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 
                 NSString *name = buff[0] == '?' && buff[1] == '\0' ? nil : [NSString stringWithUTF8String:buff];
                 
-                NSMutableArray<RDField *> *fields = nil;
+                std::vector<RDField> fields;
                 
                 if (**encoding == RDTypeEncodingSymbolStructBodySep) {
                     ++(*encoding);
                     
-                    fields = [NSMutableArray array];
-                    while (**encoding != cl && **encoding != '\0')
-                        if (RDField *field = parseField(encoding); field != nil)
-                            [fields addObject:field];
+                    while (**encoding != cl && **encoding != '\0') {
+                        NSString *name = parseQuotedString(encoding);
+                        if (**encoding == RDTypeEncodingSymbolQuote || **encoding == cl)
+                            fields.emplace_back((RDField) {.type=nil, .name=name, .offset=RDOffsetUnknown});
+                        else if (RDType *type = parseType(encoding); type != nil)
+                            fields.emplace_back((RDField) {.type=type, .name=name, .offset=RDOffsetUnknown});
                         else
-                            return nil;
+                            break;
+                    }
                 }
                 
                 if (**encoding == cl)
                     ++(*encoding);
                 
                 RDAggregateTypeKind kind = isStruct ? RDAggregateTypeKindStruct : RDAggregateTypeKindUnion;
-                return [[RDAggregateType alloc] initWithKind:kind named:name fields:fields];
+                return [[RDAggregateType alloc] initWithKind:kind name:name fields:fields.data() count:fields.size()];
             }
                 
             default: {

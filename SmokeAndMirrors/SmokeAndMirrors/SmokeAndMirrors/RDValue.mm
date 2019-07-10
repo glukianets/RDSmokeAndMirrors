@@ -27,7 +27,7 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
                && srcType != nil
                && dstType != nil
                && dstType.size != RDTypeSizeUnknown
-               && dstType.alignment != RDTypeAlignmentUnknown
+               && dstType.alignment != RDTypeAlignUnknown
                && [dstType isAssignableFromType:srcType]
                && (uintptr_t)dst % dstType.alignment == 0;
     
@@ -110,7 +110,7 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
     size_t size = type.size;
     size_t alignment = type.alignment;
 
-    if (size == RDTypeSizeUnknown || size == 0 || alignment == RDTypeAlignmentUnknown || alignment == 0)
+    if (size == RDTypeSizeUnknown || size == 0 || alignment == RDTypeAlignUnknown || alignment == 0)
         return nil;
     
     size_t alignmentPad = alignment > kAssumedMallocAlignmentBytes ? alignment - kAssumedMallocAlignmentBytes : 0;
@@ -238,11 +238,11 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
             return nil;
 
     } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
-        if (index >= type.fields.count)
+        if (index >= type.count)
             return nil;
             
-        if (RDField *field = type.fields[index]; field != nil && field.type != nil && field.offset != RDFieldOffsetUnknown)
-            return [RDValue valueWithBytes:(uint8_t *)_data + field.offset ofType:field.type];
+        if (RDField *field = [type fieldAtIndex:index]; field != NULL && field->type != nil && field->offset != RDOffsetUnknown)
+            return [RDValue valueWithBytes:(uint8_t *)_data + field->offset ofType:field->type];
         else
             return nil;
 
@@ -255,9 +255,10 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
     if (key == nil) {
         return nil;
     } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
-        for (RDField *field in type.fields)
-            if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
-                return [RDValue valueWithBytes:(uint8_t *)_data + field.offset ofType:field.type];
+        for (NSUInteger i = 0; i < type.count; ++i)
+            if (RDField *field = [type fieldAtIndex:i]; field != NULL)
+                if ([key isEqualToString:field->name] && field->type != nil && field->offset != RDOffsetUnknown)
+                    return [RDValue valueWithBytes:(uint8_t *)_data + field->offset ofType:field->type];
 
         return nil;
         
@@ -296,11 +297,8 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
             return NO;
         
     } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
-        if (index >= type.fields.count)
-            return NO;
-        
-        if (RDField *field = type.fields[index]; field != nil && field.type != nil && field.offset != RDFieldOffsetUnknown)
-            return copy((uint8_t *)_data + field.offset, field.type, value->_data, value->_type);
+        if (RDField *field = [type fieldAtIndex:index]; field != NULL && field->type != nil && field->offset != RDOffsetUnknown)
+            return copy((uint8_t *)_data + field->offset, field->type, value->_data, value->_type);
         else
             return NO;
         
@@ -310,18 +308,13 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
 }
 
 - (BOOL)setObject:(RDValue *)value atKeyedSubscript:(NSString *)key {
-    if (key == nil) {
+    if (key == nil)
         return NO;
-    } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
-        for (RDField *field in type.fields)
-            if ([key isEqualToString:field.name] && field.type != nil && field.offset != RDFieldOffsetUnknown)
-                return copy((uint8_t *)_data + field.offset, field.type, value->_data, value->_type);
+    else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil)
+        if (RDField *field = [type fieldWithName:key]; field != NULL && field->type != nil && field->offset != RDOffsetUnknown)
+            return copy((uint8_t *)_data + field->offset, field->type, value->_data, value->_type);
         
-        return NO;
-        
-    } else {
-        return NO;
-    }
+    return NO;
 }
 
 @end
@@ -511,14 +504,14 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
 - (void)_value_retainBytes:(void *)bytes {
     if (bytes != NULL)
         for (NSUInteger i = 0; i < self.count; ++i)
-            if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDFieldOffsetUnknown)
+            if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDOffsetUnknown)
                 [self.type _value_retainBytes:(uint8_t *)bytes + offset];
 }
 
 - (void)_value_releaseBytes:(void *)bytes {
     if (bytes != NULL)
         for (NSUInteger i = 0; i < self.count; ++i)
-            if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDFieldOffsetUnknown)
+            if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDOffsetUnknown)
                 [self.type _value_releaseBytes:(uint8_t *)bytes + offset];
 }
 
@@ -539,28 +532,26 @@ static bool copy(void *dst, RDType *dstType, const void *src, RDType *srcType) {
 @implementation RDAggregateType(RDValue)
 
 - (void)_value_retainBytes:(void *)bytes {
-    if (self.kind == RDAggregateTypeKindStruct)
-        if (bytes != NULL)
-            for (RDField *field in self.fields)
-                if (size_t offset = field.offset; offset != RDFieldOffsetUnknown)
-                    [field.type _value_retainBytes:(uint8_t *)bytes + offset];
+    if (bytes != NULL && self.kind == RDAggregateTypeKindStruct)
+        for (NSUInteger i = 0; i < self.count; ++i)
+            if (RDField *field = [self fieldAtIndex:i]; field != NULL && field->offset != RDOffsetUnknown)
+                [field->type _value_retainBytes:(uint8_t *)bytes + field->offset];
 }
 
 - (void)_value_releaseBytes:(void *)bytes {
-    if (self.kind == RDAggregateTypeKindStruct)
-        if (bytes != NULL)
-            for (RDField *field in self.fields)
-                if (size_t offset = field.offset; offset != RDFieldOffsetUnknown)
-                    [field.type _value_releaseBytes:(uint8_t *)bytes + offset];
+    if (bytes != NULL && self.kind == RDAggregateTypeKindStruct)
+        for (NSUInteger i = 0; i < self.count; ++i)
+            if (RDField *field = [self fieldAtIndex:i]; field != NULL && field->offset != RDOffsetUnknown)
+                [field->type _value_releaseBytes:(uint8_t *)bytes + field->offset];
 }
 
 - (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
     NSMutableArray<NSString *> *values = [NSMutableArray array];
-    for (NSUInteger i = 0; i < self.fields.count; ++i)
-        if (RDField *field = self.fields[i]; field.offset != RDFieldOffsetUnknown)
+    for (NSUInteger i = 0; i < self.count; ++i)
+        if (RDField *field = [self fieldAtIndex:i]; field != NULL && field->offset != RDOffsetUnknown)
             [values addObject:[NSString stringWithFormat:@".%@ = %@",
-                               field.name ?: [NSString stringWithFormat:@"field%zu", i],
-                               [field.type _value_describeBytes:(uint8_t *)bytes + field.offset additionalInfo:info]]];
+                               field->name ?: [NSString stringWithFormat:@"field%zu", i],
+                               [field->type _value_describeBytes:(uint8_t *)bytes + field->offset additionalInfo:info]]];
 
     return [NSString stringWithFormat:@"(%@%@) { %@ }",
                                       self.kind == RDAggregateTypeKindUnion ? @"union" : @"struct",
