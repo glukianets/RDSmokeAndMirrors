@@ -57,4 +57,15 @@ NS_ASSUME_NONNULL_BEGIN
 #define _RD_CAST_(N, OBJ, ...) RD_MACRO_CONCATENATE(_RD_CAST_, N)(OBJ, ##__VA_ARGS__)
 #define RD_CAST(OBJ, ...) _RD_CAST_(RD_MACRO_ARG_COUNT_ZOM(__VA_ARGS__), OBJ, ##__VA_ARGS__)
 
+
+#define RD_FLEX_ARRAY_RAW_CREATE(CLS, SIZE, ALIGN, COUNT) class_createInstance(CLS, (ALIGN - (alignof(max_align_t) + class_getInstanceSize(CLS)) % ALIGN) % ALIGN + COUNT * SIZE)
+#define RD_FLEX_ARRAY_RAW_ELEMENT(OBJ, SIZE, ALIGN, INDEX) ({ \
+    __auto_type _obj = (OBJ); __auto_type _index = (INDEX); __auto_type _align = (ALIGN); __auto_type _size = (SIZE); \
+    uintptr_t _base = (uintptr_t)_obj + class_getInstanceSize(object_getClass(_obj)); \
+    (void *)(_base + (_align - _base % _align) % _align + _index * _size); \
+})
+
+#define RD_FLEX_ARRAY_CREATE(CLS, TYPE, COUNT) RD_FLEX_ARRAY_RAW_CREATE(CLS, sizeof(TYPE), alignof(TYPE), COUNT)
+#define RD_FLEX_ARRAY_ELEMENT(OBJ, TYPE, INDEX) (TYPE *)RD_FLEX_ARRAY_RAW_ELEMENT(OBJ, sizeof(TYPE), alignof(TYPE), INDEX)
+
 NS_ASSUME_NONNULL_END

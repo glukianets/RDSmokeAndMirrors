@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #include <algorithm>
+#include <numeric>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -47,21 +48,6 @@ NSArray<R *> *_Nonnull zip(R *_Nullable (^_Nonnull zipper)(T *_Nonnull...), NSAr
             [result addObject:object];
     
     return result;
-}
-
-template<typename T>
-_Nonnull id createFlexArrayInstance(_Nonnull Class cls, NSUInteger count) {
-    return class_createInstance(cls, count * sizeof(T));
-}
-
-template<typename T>
-T *_Nonnull getFlexArrayElement(id obj, NSUInteger index) {
-    return (T *)((uintptr_t)obj + class_getInstanceSize(object_getClass(obj)) + index * sizeof(T));
-}
-
-template<typename T>
-void setFlexArrayElement(id obj, NSUInteger index, const T &value) {
-    *getFlexArrayElement<T>(obj, index) = value;
 }
 
 NS_ASSUME_NONNULL_END

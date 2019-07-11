@@ -525,6 +525,11 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     return instance;
 }
 
+- (void)dealloc {
+    for (NSUInteger i = 0; i < self.count; ++i)
+        *RD_FLEX_ARRAY_ELEMENT(self, RDField, i) = (RDField) {.type=nil, .name=nil, .offset=RDOffsetUnknown};
+}
+
 - (instancetype)initWithKind:(RDAggregateTypeKind)kind name:(NSString *)name fields:(RDField *)fields count:(NSUInteger)count {
     size_t size, alignment;
     switch (kind) {
@@ -536,14 +541,14 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
             break;
     }
     
-    self = createFlexArrayInstance<RDField>(self.class, count);
+    self = RD_FLEX_ARRAY_CREATE(self.class, RDField, count);
     self = [super initWithByteSize:size alignment:alignment];
     if (self) {
         _kind = kind;
         _name = name.copy;
         _count = count;
         for (NSUInteger i = 0; i < count; ++i)
-            setFlexArrayElement(self, i, fields[i]);
+            *RD_FLEX_ARRAY_ELEMENT(self, RDField, i) = fields[i];
     }
     return self;
 }
@@ -552,7 +557,7 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     if (index >= self.count)
         return nil;
     
-    return getFlexArrayElement<RDField>(self, index);
+    return RD_FLEX_ARRAY_ELEMENT(self, RDField, index);
 }
 
 - (RDField *)fieldAtOffset:(RDOffset)offset {
