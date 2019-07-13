@@ -105,7 +105,7 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 @property (nonatomic, readonly) size_t alignment;
 @property (nonatomic, readonly) const char *objCTypeEncoding;
 
-+ (nullable instancetype)typeWithObjcTypeEncoding:(const char *)types;
++ (nullable instancetype)typeWithObjcTypeEncoding:(nullable const char *)types;
 + (instancetype)new NS_UNAVAILABLE;
 
 - (instancetype)init NS_UNAVAILABLE;

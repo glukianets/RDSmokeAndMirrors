@@ -67,7 +67,10 @@
     NSString *c1 = nil;
     RDValueGet(value[0], &c1);
     XCTAssertEqual(c1, cannary1, @"Should extract value by index");
-    
+    c1 = nil;
+    RDValueGetAt(value, 0, &c1);
+    XCTAssertEqual(c1, cannary1, @"Should extract bytes by index");
+
     RDMutableValue *mvalue = [value mutableCopy];
     XCTAssertNotNil(mvalue, @"Should mutable copy");
 
