@@ -86,7 +86,7 @@ RD_FINAL_CLASS
 }
 
 - (__kindof RDMirror *)mirrorForItem:(RDObjcOpaqueItem *)item
-                       valueProducer:(__kindof RDMirror *(^)())producer
+                       valueProducer:(__kindof RDMirror *(NS_NOESCAPE ^)())producer
 {
     __kindof RDMirror *mirror = [self.cache objectForKey:item];
     if (mirror != nil) {
@@ -99,6 +99,9 @@ RD_FINAL_CLASS
 }
 
 - (RDClass *)mirrorForObjcClass:(__unsafe_unretained Class)cls {
+    if (cls == Nil)
+        return nil;
+    
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithClass:cls] valueProducer:^RDClass *{
         __unsafe_unretained Class meta = object_getClass(cls);
         __unsafe_unretained Class supr = class_getSuperclass(cls);
@@ -170,6 +173,9 @@ RD_FINAL_CLASS
 
 
 - (RDProtocol *)mirrorForObjcProtocol:(Protocol *)protocol {
+    if (protocol == nil)
+        return nil;
+    
     static NSSet<NSString *> *excludedProtocolNames = [NSSet setWithObjects:
                                                        @"NSItemProviderReading",
                                                        @"_NSAsynchronousPreparationInputParameters",
@@ -246,6 +252,9 @@ RD_FINAL_CLASS
 }
 
 - (RDMethod *)mirrorForObjcMethod:(Method)method {
+    if (method == NULL)
+        return nil;
+    
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithMethod:method] valueProducer:^RDMirror *{
         SEL selector = method_getName(method);
         RDMethodSignature *signature = ({
@@ -266,6 +275,9 @@ RD_FINAL_CLASS
 }
 
 - (RDProperty *)mirrorForObjcProperty:(Property)property {
+    if (property == NULL)
+        return nil;
+    
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithProperty:property] valueProducer:^RDMirror *{
         NSString *name = ({
             const char *name = property_getName(property);
@@ -281,6 +293,9 @@ RD_FINAL_CLASS
 }
 
 - (RDIvar *)mirrorForObjcIvar:(Ivar)ivar {
+    if (ivar == NULL)
+        return nil;
+    
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithIvar:ivar] valueProducer:^__kindof RDMirror *{
         ptrdiff_t offset = ivar_getOffset(ivar);
         NSString *name = ({
@@ -302,9 +317,10 @@ RD_FINAL_CLASS
     }];
 }
 
-- (RDBlock *)mirrorForObjcBlock:(id)block {
-    NSCParameterAssert(block);
-
+- (RDBlock *)mirrorForObjcBlock:(NS_NOESCAPE id)block {
+    if (block == nil)
+        return nil;
+    
     // https://clang.llvm.org/docs/Block-ABI-Apple.html
     typedef enum RDBlockInfoFlags : int {
         RDBlockInfoFlagHasCopyDispose   = (1 << 25),

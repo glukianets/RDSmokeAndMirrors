@@ -553,6 +553,29 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     return self;
 }
 
+- (instancetype)initWithKind:(RDAggregateTypeKind)kind name:(NSString *)name, ... {
+    typedef const char *encoding_t;
+    
+    va_list ap;
+    
+    va_start(ap, name);
+    NSUInteger count = 0;
+    while (va_arg(ap, encoding_t) != NULL)
+        ++count;
+    va_end(ap);
+    
+    va_start(ap, name);
+    NSUInteger i = 0;
+    RDField fields[count];
+    memset(fields, 0, sizeof(RDField) * count + 1);
+    encoding_t encoding;
+    while ((encoding = va_arg(ap, encoding_t)) != NULL)
+        fields[i++] = (RDField){ .type=[RDType typeWithObjcTypeEncoding:encoding], .name=nil, .offset=RDOffsetUnknown };
+    va_end(ap);
+    
+    return [self initWithKind:kind name:nil fields:fields count:count];
+}
+
 - (RDField *)fieldAtIndex:(NSUInteger)index {
     if (index >= self.count)
         return nil;
@@ -758,7 +781,7 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
 
 - (NSString *)description {
     NSString *attrs = self.attributes.count > 0 ? [[self.attributes.array componentsJoinedByString:@" "] stringByAppendingString:@" "] : @"";
-    return [attrs stringByAppendingString:self.type.description ?: @""];
+    return [NSString stringWithFormat:@"(%@%@)", attrs, self.type.description ?: @"?"];
 }
 
 @end

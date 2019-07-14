@@ -184,6 +184,8 @@ RD_FINAL_CLASS
 @property (nonatomic, readonly, nullable) NSString *name;
 @property (nonatomic, readonly) NSUInteger count;
 
+- (instancetype)initWithKind:(RDAggregateTypeKind)kind name:(NSString *)name, ... NS_REQUIRES_NIL_TERMINATION;
+
 - (nullable RDField *)fieldAtIndex:(NSUInteger)index;
 - (nullable RDField *)fieldAtOffset:(RDOffset)offset;
 - (nullable RDField *)fieldWithName:(NSString *)name;

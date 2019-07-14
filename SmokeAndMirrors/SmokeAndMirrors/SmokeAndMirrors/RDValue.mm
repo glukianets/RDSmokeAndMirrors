@@ -3,6 +3,8 @@
 #import <malloc/malloc.h>
 #import <objc/runtime.h>
 
+#define _data (uint8_t *)RD_FLEX_ARRAY_RAW_ELEMENT(self, _type.size, _type.alignment, 0)
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDType(RDValue)
@@ -65,7 +67,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 }
 
 - (void)dealloc {
-    [_type _value_releaseBytes:self.data];
+    [_type _value_releaseBytes:_data];
 }
 
 + (instancetype)valueWithBytes:(const void *)bytes ofType:(RDType *)type {
@@ -110,8 +112,8 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     self = [super init];
     if (self) {
         _type = type;
-        memcpy(self.data, bytes, size);
-        [_type _value_retainBytes:self.data];
+        memcpy(_data, bytes, size);
+        [_type _value_retainBytes:_data];
     }
     return self;
 }
@@ -126,7 +128,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 }
 
 - (BOOL)getValue:(void *)value type:(RDType *)type {
-    return copy(value, type, self.data, _type);
+    return copy(value, type, _data, _type);
 }
 
 - (BOOL)getValue:(void *)value objCType:(const char *)type atIndex:(NSUInteger)index {
@@ -139,10 +141,10 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 - (BOOL)getValue:(void *)value type:(RDType *)type atIndex:(NSUInteger)index {
     if (RDArrayType *rdtype = RD_CAST(self.type, RDArrayType); rdtype != nil) {
         if (RDOffset offset = [rdtype offsetForElementAtIndex:index]; offset != RDOffsetUnknown)
-            return copy(value, type, self.data + offset, rdtype.type);
+            return copy(value, type, _data + offset, rdtype.type);
     } else if (RDAggregateType *rdtype = RD_CAST(self.type, RDAggregateType); rdtype != nil) {
         if (RDField *field = [rdtype fieldAtIndex:index]; field != NULL && field->offset != RDOffsetUnknown && field->type != nil)
-            return copy(value, type, self.data + field->offset, field->type);
+            return copy(value, type, _data + field->offset, field->type);
     }
     
     return NO;
@@ -159,18 +161,18 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     if (key.length > 0)
         if (RDAggregateType *rdtype = RD_CAST(self.type, RDAggregateType); rdtype != nil)
             if (RDField *field = [rdtype fieldWithName:key]; field != NULL && field->offset != RDOffsetUnknown && field->type != nil)
-                return copy(value, type, self.data + field->offset, field->type);
+                return copy(value, type, _data + field->offset, field->type);
 
     return NO;
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:[self.type _value_formatWithBytes:self.data],
+    return [NSString stringWithFormat:[self.type _value_formatWithBytes:_data],
             [NSString stringWithFormat:@"value_at_%p", self]];
 }
 
 - (NSString *)debugDescription {
-    return [self.type _value_describeBytes:self.data additionalInfo:nil];
+    return [self.type _value_describeBytes:_data additionalInfo:nil];
 }
 
 - (const char *)objCType {
@@ -187,7 +189,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     if (self.class == RDValue.self)
         return self;
     else
-        return [[RDValue alloc] initWithBytes:self.data ofType:_type];
+        return [[RDValue alloc] initWithBytes:_data ofType:_type];
 }
 
 #pragma mark <NSMutableCopying>
@@ -197,7 +199,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 }
 
 - (RDMutableValue *)mutableCopyWithZone:(NSZone *)zone {
-    return [[RDMutableValue alloc] initWithBytes:self.data ofType:_type];
+    return [[RDMutableValue alloc] initWithBytes:_data ofType:_type];
 }
 
 #pragma mark <NSSecureCopying>
@@ -224,7 +226,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 - (void)encodeWithCoder:(nonnull NSCoder *)coder {
     if (_type != nil && _type.size != RDTypeSizeUnknown) {
         [coder encodeObject:_type forKey:@"type"];
-        [coder encodeBytes:self.data length:_type.size forKey:@"data"];
+        [coder encodeBytes:_data length:_type.size forKey:@"data"];
     } else {
         [coder encodeObject:nil forKey:@"type"];
     }
@@ -235,7 +237,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 - (RDValue *)objectAtIndexedSubscript:(NSUInteger)index {
     if (RDArrayType *type = RD_CAST(self.type, RDArrayType); type != nil) {
         if (index < type.count)
-            return [RDValue valueWithBytes:self.data + [type offsetForElementAtIndex:index] ofType:type.type];
+            return [RDValue valueWithBytes:_data + [type offsetForElementAtIndex:index] ofType:type.type];
         else
             return nil;
 
@@ -244,7 +246,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
             return nil;
             
         if (RDField *field = [type fieldAtIndex:index]; field != NULL && field->type != nil && field->offset != RDOffsetUnknown)
-            return [RDValue valueWithBytes:self.data + field->offset ofType:field->type];
+            return [RDValue valueWithBytes:_data + field->offset ofType:field->type];
         else
             return nil;
 
@@ -260,19 +262,13 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
         for (NSUInteger i = 0; i < type.count; ++i)
             if (RDField *field = [type fieldAtIndex:i]; field != NULL)
                 if ([key isEqualToString:field->name] && field->type != nil && field->offset != RDOffsetUnknown)
-                    return [RDValue valueWithBytes:self.data + field->offset ofType:field->type];
+                    return [RDValue valueWithBytes:_data + field->offset ofType:field->type];
 
         return nil;
         
     } else {
         return nil;
     }
-}
-
-#pragma mark Private
-
-- (uint8_t *)data {
-    return (uint8_t *)RD_FLEX_ARRAY_RAW_ELEMENT(self, self.type.size, self.type.alignment, 0);
 }
 
 @end
@@ -291,7 +287,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 }
 
 - (BOOL)setValue:(void *)value type:(RDType *)type {
-    return copy(self.data, _type, value, type);
+    return copy(_data, _type, value, type);
 }
 
 - (BOOL)setValue:(void *)value objCType:(const char *)type atIndex:(NSUInteger)index; {
@@ -304,10 +300,10 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 - (BOOL)setValue:(void *)value type:(RDType *)type atIndex:(NSUInteger)index {
     if (RDArrayType *rdtype = RD_CAST(self.type, RDArrayType); rdtype != nil) {
         if (RDOffset offset = [rdtype offsetForElementAtIndex:index]; offset != RDOffsetUnknown)
-            return copy(self.data + offset, rdtype.type, value, type);
+            return copy(_data + offset, rdtype.type, value, type);
     } else if (RDAggregateType *rdtype = RD_CAST(self.type, RDAggregateType); rdtype != nil) {
         if (RDField *field = [rdtype fieldAtIndex:index]; field != NULL && field->offset != RDOffsetUnknown && field->type != nil)
-            return copy(self.data + field->offset, field->type, value, type);
+            return copy(_data + field->offset, field->type, value, type);
     }
 
     return NO;
@@ -324,7 +320,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     if (key.length > 0)
         if (RDAggregateType *rdtype = RD_CAST(self.type, RDAggregateType); rdtype != nil)
             if (RDField *field = [rdtype fieldWithName:key]; field != NULL && field->offset != RDOffsetUnknown && field->type != nil)
-                return copy(self.data + field->offset, field->type, value, type);
+                return copy(_data + field->offset, field->type, value, type);
     
     return NO;
 }
@@ -333,13 +329,13 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 - (BOOL)setObject:(RDValue *)value atIndexedSubscript:(NSUInteger)index {
     if (RDArrayType *type = RD_CAST(self.type, RDArrayType); type != nil) {
         if (index < type.count)
-            return copy(self.data + [type offsetForElementAtIndex:index], type.type, value.data, value->_type);
+            return copy(_data + [type offsetForElementAtIndex:index], type.type, value.data, value->_type);
         else
             return NO;
         
     } else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil) {
         if (RDField *field = [type fieldAtIndex:index]; field != NULL && field->type != nil && field->offset != RDOffsetUnknown)
-            return copy(self.data + field->offset, field->type, value.data, value->_type);
+            return copy(_data + field->offset, field->type, value.data, value->_type);
         else
             return NO;
         
@@ -353,7 +349,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
         return NO;
     else if (RDAggregateType *type = RD_CAST(self.type, RDAggregateType); type != nil)
         if (RDField *field = [type fieldWithName:key]; field != NULL && field->type != nil && field->offset != RDOffsetUnknown)
-            return copy(self.data + field->offset, field->type, value.data, value->_type);
+            return copy(_data + field->offset, field->type, value.data, value->_type);
         
     return NO;
 }

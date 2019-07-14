@@ -11,7 +11,7 @@ RD_FINAL_CLASS
 - (RDMethod *)mirrorForObjcMethod:(Method)method;
 - (RDProperty *)mirrorForObjcProperty:(Property)property;
 - (RDIvar *)mirrorForObjcIvar:(Ivar)ivar;
-- (RDBlock *)mirrorForObjcBlock:(id)block;
+- (RDBlock *)mirrorForObjcBlock:(NS_NOESCAPE id)block;
 
 @end
 

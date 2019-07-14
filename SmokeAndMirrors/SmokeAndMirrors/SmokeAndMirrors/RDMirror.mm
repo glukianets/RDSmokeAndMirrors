@@ -97,7 +97,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 }
 
 - (RDClass *)super {
-    if (_super == nil && self.objcSuper != nil)
+    if (_super == nil && self.objcSuper != Nil)
         _super = [self.smoke mirrorForObjcClass:self.objcSuper];
 
     return _super;
@@ -105,7 +105,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 - (RDClass *)meta {
     if (_meta == nil) {
-        if (self.objcMeta == nil)
+        if (self.objcMeta == Nil)
             return self;
         else
             _meta = [self.smoke mirrorForObjcClass:self.objcMeta];
@@ -405,8 +405,7 @@ NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstan
         } else {
             NSArray<RDMethodArgument *> *arguments = [signature.arguments subarrayWithRange:NSMakeRange(2, signature.arguments.count - 2)];
             body = [zip(^NSString *(NSString *name, RDMethodArgument *argument) {
-                NSString *argdesc = argument.description;
-                argdesc = argdesc ? [NSString stringWithFormat:@"(%@)", argdesc] : @"";
+                NSString *argdesc = argument.description ?: @"";
                 return [name stringByAppendingFormat:@":%@arg%d", argdesc, 1];
             }, nameParts, arguments) componentsJoinedByString:@" "];
         }
