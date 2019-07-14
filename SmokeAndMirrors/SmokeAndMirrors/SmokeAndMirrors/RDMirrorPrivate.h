@@ -1,4 +1,5 @@
 #import "RDMirror.h"
+#import "RDPrivate.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

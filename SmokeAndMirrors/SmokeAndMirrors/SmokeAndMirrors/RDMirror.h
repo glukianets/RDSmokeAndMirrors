@@ -123,17 +123,10 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-typedef NS_ENUM(NSUInteger, RDBlockKind) {
-    RDBlockKindGlobal,
-    RDBlockKindStack,
-    RDBlockKindMalloc,
-};
-
 RD_FINAL_CLASS
 @interface RDBlock : RDMirror
 @property (nonatomic, readonly) size_t size;
 @property (nonatomic, readonly) RDClass *clss;
-@property (nonatomic, readonly) RDBlockKind kind;
 @property (nonatomic, readonly, nullable) RDMethodSignature *signature;
 @end
 

@@ -4,6 +4,42 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// https://clang.llvm.org/docs/Block-ABI-Apple.html
+typedef enum RDBlockInfoFlags : int {
+    RDBlockInfoFlagIsNoEscape       = (1 << 23),
+    RDBlockInfoFlagHasCopyDispose   = (1 << 25),
+    RDBlockInfoFlagHasConstructor   = (1 << 26),
+    RDBlockInfoFlagIsGlobal         = (1 << 28),
+    RDBlockInfoFlagHasStret         = (1 << 29),
+    RDBlockInfoFlagHasSignature     = (1 << 30),
+} RDBlockInfoFlags;
+
+extern "C" typedef struct RDBlockDescriptor {
+    unsigned long int reserved;
+    unsigned long int size;
+    void (*copyHelper)(void *dst, void *src);     // if RDBlockInfoFlagHasCopyDispose
+    void (*disposeHelper)(void *src);             // if RDBlockInfoFlagHasCopyDispose
+    const char *signature;                        // if RDBlockInfoFlagHasSignature
+} RDBlockDescriptor;
+
+extern "C" typedef struct RDBlockInfo {
+    void *isa;
+    RDBlockInfoFlags flags;
+    int reserved;
+    void (*invoke)(void *, ...);
+    RDBlockDescriptor *descriptor;
+} RDBlockInfo;
+
+typedef NS_ENUM(NSUInteger, RDBlockKind) {
+    RDBlockKindGlobal,
+    RDBlockKindStack,
+    RDBlockKindMalloc,
+};
+
+RDBlockInfo *RDBlockInfoOfBlock(id block);
+const char *RDBlockInfoGetObjCSignature(const RDBlockInfo *blockInfo);
+RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo);
+
 extern "C" id _Nullable objc_autorelease(id _Nullable value);
 extern "C" void objc_autoreleasePoolPop(void *pool);
 extern "C" void *objc_autoreleasePoolPush(void);

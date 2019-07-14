@@ -13,6 +13,9 @@
 		71448D4A22C835F00030669A /* RDCommon.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71448D4822C835F00030669A /* RDCommon.mm */; };
 		716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */ = {isa = PBXBuildFile; fileRef = 716A1CBA22C2683E002BA968 /* RDSmoke.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */ = {isa = PBXBuildFile; fileRef = 716A1CBB22C2683E002BA968 /* RDSmoke.mm */; };
+		7174A4A422DB512200EA0D70 /* RDBlockObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 7174A4A222DB512200EA0D70 /* RDBlockObject.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7174A4A522DB512200EA0D70 /* RDBlockObject.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7174A4A322DB512200EA0D70 /* RDBlockObject.mm */; };
+		7174A4A722DB526E00EA0D70 /* RDPrivate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7174A4A622DB526E00EA0D70 /* RDPrivate.mm */; };
 		7194C17922C2564E001E9656 /* SmokeAndMirrors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */; };
 		7194C17E22C2564E001E9656 /* SmokeAndMirrorsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 7194C17D22C2564E001E9656 /* SmokeAndMirrorsTests.m */; };
 		7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7194C17222C2564D001E9656 /* SmokeAndMirrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -44,6 +47,9 @@
 		71448D4822C835F00030669A /* RDCommon.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDCommon.mm; sourceTree = "<group>"; };
 		716A1CBA22C2683E002BA968 /* RDSmoke.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDSmoke.h; sourceTree = "<group>"; };
 		716A1CBB22C2683E002BA968 /* RDSmoke.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDSmoke.mm; sourceTree = "<group>"; };
+		7174A4A222DB512200EA0D70 /* RDBlockObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDBlockObject.h; sourceTree = "<group>"; };
+		7174A4A322DB512200EA0D70 /* RDBlockObject.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDBlockObject.mm; sourceTree = "<group>"; };
+		7174A4A622DB526E00EA0D70 /* RDPrivate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDPrivate.mm; sourceTree = "<group>"; };
 		7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SmokeAndMirrors.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7194C17222C2564D001E9656 /* SmokeAndMirrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmokeAndMirrors.h; sourceTree = "<group>"; };
 		7194C17322C2564D001E9656 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -125,6 +131,7 @@
 			isa = PBXGroup;
 			children = (
 				71D06DAD22C2B4F500568CAE /* RDPrivate.h */,
+				7174A4A622DB526E00EA0D70 /* RDPrivate.mm */,
 				71448D4722C835F00030669A /* RDCommon.h */,
 				71448D4822C835F00030669A /* RDCommon.mm */,
 				7194C18A22C25A02001E9656 /* RDMirror.h */,
@@ -138,6 +145,8 @@
 				71448D3122C823120030669A /* RDValue.mm */,
 				71B4323622D0E8380046463D /* RDInvocation.h */,
 				71B4323722D0E8380046463D /* RDInvocation.mm */,
+				7174A4A222DB512200EA0D70 /* RDBlockObject.h */,
+				7174A4A322DB512200EA0D70 /* RDBlockObject.mm */,
 			);
 			path = SmokeAndMirrors;
 			sourceTree = "<group>";
@@ -160,6 +169,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				71448D3222C823120030669A /* RDValue.h in Headers */,
+				7174A4A422DB512200EA0D70 /* RDBlockObject.h in Headers */,
 				716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */,
 				71D06DAB22C2B35000568CAE /* RDType.h in Headers */,
 				7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */,
@@ -272,8 +282,10 @@
 				7194C18D22C25A02001E9656 /* RDMirror.mm in Sources */,
 				71D06DAC22C2B35000568CAE /* RDType.mm in Sources */,
 				716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */,
+				7174A4A522DB512200EA0D70 /* RDBlockObject.mm in Sources */,
 				71448D3322C823120030669A /* RDValue.mm in Sources */,
 				71B4323922D0E8380046463D /* RDInvocation.mm in Sources */,
+				7174A4A722DB526E00EA0D70 /* RDPrivate.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

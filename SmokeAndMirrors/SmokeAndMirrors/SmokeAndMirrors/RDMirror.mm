@@ -341,6 +341,8 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @interface RDBlock()
 
+@property (nonatomic, readonly) RDBlockKind kind;
+
 @end
 
 @implementation RDBlock
