@@ -2,6 +2,7 @@
 #import "RDPrivate.h"
 #import <malloc/malloc.h>
 #import <objc/runtime.h>
+#import <cstdarg>
 
 #define _data (uint8_t *)RD_FLEX_ARRAY_RAW_ELEMENT(self, _type.size, _type.alignment, 0)
 
@@ -113,6 +114,39 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     if (self) {
         _type = type;
         memcpy(_data, bytes, size);
+        [_type _value_retainBytes:_data];
+    }
+    return self;
+}
+
+- (nullable instancetype)initTupleWithType:(RDAggregateType *)type, ... {
+    if (type == nil || type.kind != RDAggregateTypeKindStruct)
+        return nil;
+    
+    size_t size = type.size;
+    size_t alignment = type.alignment;
+    
+    if (size == RDTypeSizeUnknown || size == 0 || alignment == RDTypeAlignUnknown || alignment == 0)
+        return nil;
+    
+    self = RD_FLEX_ARRAY_RAW_CREATE(self.class, size, alignment, 1);
+    self = [super init];
+    if (self) {
+        _type = type;
+        
+        va_list ap;
+        va_start(ap, type);
+        for (NSUInteger i = 0; i < type.count; ++i)
+            if (const void *data = va_arg(ap, const void *); data == NULL)
+                continue;
+            else if (RDField *field = [type fieldAtIndex:i]; field == NULL || field->offset == RDOffsetUnknown)
+                continue;
+            else if (RDType *fieldType = field->type; fieldType == nil || fieldType.size == RDTypeSizeUnknown)
+                continue;
+            else
+                memcpy(_data + field->offset, data, field->type.size);
+        va_end(ap);
+        
         [_type _value_retainBytes:_data];
     }
     return self;
