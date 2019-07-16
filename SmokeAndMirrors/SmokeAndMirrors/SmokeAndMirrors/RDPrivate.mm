@@ -30,3 +30,12 @@ RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo) {
     else
         return RDBlockKindMalloc;
 }
+
+NSUInteger RDSelectorArgumentsCount(SEL selector) {
+    NSUInteger count = 0;
+    for (const char *c = sel_getName(selector); c != NULL && *c != '\0'; ++c)
+        if (*c == ':')
+            ++count;
+
+    return count;
+}

@@ -40,6 +40,8 @@ RDBlockInfo *RDBlockInfoOfBlock(id block);
 const char *RDBlockInfoGetObjCSignature(const RDBlockInfo *blockInfo);
 RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo);
 
+NSUInteger RDSelectorArgumentsCount(SEL);
+
 extern "C" id _Nullable objc_autorelease(id _Nullable value);
 extern "C" void objc_autoreleasePoolPop(void *pool);
 extern "C" void *objc_autoreleasePoolPush(void);

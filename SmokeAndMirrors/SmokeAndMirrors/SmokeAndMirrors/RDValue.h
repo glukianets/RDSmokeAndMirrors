@@ -3,7 +3,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#define RDValueBox(VALUE) ({ __auto_type v = (VALUE); [[RDValue alloc] initWithBytes:&v objCType:@encode(typeof(v))]; })
 #define RDValueSet(RDVALUE, VALUE) ({ __auto_type v = (VALUE); [(RDVALUE) setValue:&v objCType:@encode(typeof(v))]; })
 #define RDValueSetAt(RDVALUE, INDEX, VALUE) ({ __auto_type v = (VALUE); [(RDVALUE) setValue:&v objCType:@encode(typeof(v)) atIndex:(INDEX)]; })
 #define RDValueGet(RDVALUE, VALUE) ({ __auto_type v = (VALUE); [(RDVALUE) getValue:v objCType:@encode(typeof(*v))]; })
@@ -17,9 +16,11 @@ _RD_LIST(_RD_VAR_DCL, __VA_ARGS__) \
 RDAggregateType *type = [[RDAggregateType alloc] initWithKind:RDAggregateTypeKindStruct name:nil, _RD_CSL(_RD_VAR_ENC, __VA_ARGS__), nil]; \
 [[TYPE alloc] initTupleWithType:type, _RD_CSL(_RD_VAR_NOM, __VA_ARGS__)]; \
 })
-#define RDValueTuple(...) _RD_TUPLE(RDValue, __VA_ARGS__)
+#define _RD_VALUE(TYPE, VALUE) ({ __auto_type v = (VALUE); [[TYPE alloc] initWithBytes:&v objCType:@encode(typeof(v))]; })
 
-#define RDMutableValueBox(VALUE) ({ __auto_type v = (VALUE); [[RDMutableValue alloc] initWithBytes:&v objCType:@encode(typeof(v))]; })
+#define RDValueBox(VALUE) _RD_VALUE(RDValue, VALUE)
+#define RDValueTuple(...) _RD_TUPLE(RDValue, __VA_ARGS__)
+#define RDMutableValueBox(VALUE) _RD_VALUE(RDMutableValue, __VA_ARGS__)
 #define RDMutableValueTuple(...) _RD_TUPLE(RDMutableValue, __VA_ARGS__)
 
 @class RDMutableValue;
