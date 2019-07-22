@@ -185,6 +185,7 @@ RD_FINAL_CLASS
                                                        @"MPSCNNBatchNormalizationDataSource",
                                                        @"NSItemProviderWriting",
                                                        @"ROCKForwardingInterposable",
+                                                       @"NSSecureCoding",
                                                        nil];
 
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithProtocol:protocol] valueProducer:^RDProtocol *{

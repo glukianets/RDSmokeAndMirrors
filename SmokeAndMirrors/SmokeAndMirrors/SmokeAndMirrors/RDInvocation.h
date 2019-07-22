@@ -3,27 +3,24 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-RD_FINAL_CLASS
-@interface RDMessage : NSObject
-
-@property (nonatomic, readonly) SEL selector;
-@property (nonatomic, readonly) RDValue *arguments;
-
-+ (instancetype)new NS_UNAVAILABLE;
-- (instancetype)init NS_UNAVAILABLE;
-
-+ (nullable instancetype)messageWithSelector:(SEL)selector arguments:(RDValue *)arguments;
-- (nullable instancetype)initWithSelector:(SEL)selector arguments:(RDValue *)arguments;
-
-@end
+extern NSErrorDomain const RDInvocationErrorDomain;
 
 RD_FINAL_CLASS
 @interface RDInvocation : NSObject
 
-@property (nonatomic, readonly) RDMethodSignature *signature;
-@property (nonatomic, readonly) RDMessage *message;
+@property (nonatomic, readonly) RDValue *arguments;
 
-- (instancetype)initWithSignature:(RDMethodSignature *)signature message:(RDMessage *)message;
++ (instancetype)new NS_UNAVAILABLE;
++ (instancetype)invocationWithArguments:(RDValue *)arguments;
+
+- (instancetype)init NS_UNAVAILABLE;
+- (instancetype)initWithArguments:(RDValue *)arguments;
+
+- (nullable RDValue *)invokeWithTarget:(nullable id<NSObject>)target
+                          selector:(SEL)selector;
+- (nullable RDValue *)invokeWithTarget:(nullable id<NSObject>)target
+                          selector:(SEL)selector
+                             error:(NSError *_Nullable *_Nullable)error;
 
 @end
 

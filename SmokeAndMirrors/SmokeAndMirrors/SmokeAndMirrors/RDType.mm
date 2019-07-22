@@ -566,14 +566,23 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     
     va_start(ap, name);
     NSUInteger i = 0;
-    RDField fields[count];
-    memset(fields, 0, sizeof(RDField) * count + 1);
+    RDField fields[MAX(1, count)];
+    memset(fields, 0, sizeof(RDField) * count);
     encoding_t encoding;
     while ((encoding = va_arg(ap, encoding_t)) != NULL)
-        fields[i++] = (RDField){ .type=[RDType typeWithObjcTypeEncoding:encoding], .name=nil, .offset=RDOffsetUnknown };
+        fields[i++] = (RDField) {
+            .type=[RDType typeWithObjcTypeEncoding:encoding],
+            .name=nil,
+            .offset=RDOffsetUnknown
+        };
     va_end(ap);
     
-    return [self initWithKind:kind name:nil fields:fields count:count];
+    RDAggregateType *result = [self initWithKind:kind name:nil fields:fields count:count];
+
+    for (NSUInteger i = 0; i < count; ++i)
+        fields[i] = (RDField) {.type=nil, .name=nil, .offset=0};
+    
+    return result;
 }
 
 - (RDField *)fieldAtIndex:(NSUInteger)index {

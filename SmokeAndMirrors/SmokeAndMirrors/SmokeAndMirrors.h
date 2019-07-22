@@ -7,4 +7,5 @@ FOUNDATION_EXPORT const unsigned char SmokeAndMirrorsVersionString[];
 #import "RDMirror.h"
 #import "RDSmoke.h"
 #import "RDValue.h"
+#import "RDInvocation.h"
 #import "RDBlockObject.h"

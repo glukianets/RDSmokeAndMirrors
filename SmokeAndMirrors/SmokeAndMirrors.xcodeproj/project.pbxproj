@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7142E3D022E528FB00F69F0C /* RDInvocationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 7142E3CF22E528FB00F69F0C /* RDInvocationTests.m */; };
 		71448D3222C823120030669A /* RDValue.h in Headers */ = {isa = PBXBuildFile; fileRef = 71448D3022C823120030669A /* RDValue.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71448D3322C823120030669A /* RDValue.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71448D3122C823120030669A /* RDValue.mm */; };
 		71448D4922C835F00030669A /* RDCommon.h in Headers */ = {isa = PBXBuildFile; fileRef = 71448D4722C835F00030669A /* RDCommon.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -21,9 +22,10 @@
 		7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 7194C17222C2564D001E9656 /* SmokeAndMirrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7194C18C22C25A02001E9656 /* RDMirror.h in Headers */ = {isa = PBXBuildFile; fileRef = 7194C18A22C25A02001E9656 /* RDMirror.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7194C18D22C25A02001E9656 /* RDMirror.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7194C18B22C25A02001E9656 /* RDMirror.mm */; };
-		71B4323822D0E8380046463D /* RDInvocation.h in Headers */ = {isa = PBXBuildFile; fileRef = 71B4323622D0E8380046463D /* RDInvocation.h */; };
+		71B4323822D0E8380046463D /* RDInvocation.h in Headers */ = {isa = PBXBuildFile; fileRef = 71B4323622D0E8380046463D /* RDInvocation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71B4323922D0E8380046463D /* RDInvocation.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71B4323722D0E8380046463D /* RDInvocation.mm */; };
 		71B4323C22D0E8EF0046463D /* libffi.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 71B4323B22D0E8CE0046463D /* libffi.tbd */; };
+		71CEE7CE22E5364D001269D8 /* RDValueTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 71CEE7CD22E5364D001269D8 /* RDValueTests.m */; };
 		71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */; };
 		71D06DAB22C2B35000568CAE /* RDType.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA922C2B35000568CAE /* RDType.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71D06DAC22C2B35000568CAE /* RDType.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71D06DAA22C2B35000568CAE /* RDType.mm */; };
@@ -41,6 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7142E3CF22E528FB00F69F0C /* RDInvocationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDInvocationTests.m; sourceTree = "<group>"; };
 		71448D3022C823120030669A /* RDValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDValue.h; sourceTree = "<group>"; };
 		71448D3122C823120030669A /* RDValue.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDValue.mm; sourceTree = "<group>"; };
 		71448D4722C835F00030669A /* RDCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDCommon.h; sourceTree = "<group>"; };
@@ -63,6 +66,7 @@
 		71B4323B22D0E8CE0046463D /* libffi.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libffi.tbd; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/usr/lib/libffi.tbd; sourceTree = DEVELOPER_DIR; };
 		71B4323D22D0E8EF0046463D /* libffi-trampolines.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libffi-trampolines.tbd"; path = "Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/usr/lib/libffi-trampolines.tbd"; sourceTree = DEVELOPER_DIR; };
 		71B4323E22D0EBB60046463D /* libffi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libffi.dylib; path = ../../../../../usr/lib/libffi.dylib; sourceTree = "<group>"; };
+		71CEE7CD22E5364D001269D8 /* RDValueTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDValueTests.m; sourceTree = "<group>"; };
 		71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDMirrorPrivate.h; sourceTree = "<group>"; };
 		71D06DA922C2B35000568CAE /* RDType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDType.h; sourceTree = "<group>"; };
 		71D06DAA22C2B35000568CAE /* RDType.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDType.mm; sourceTree = "<group>"; };
@@ -122,6 +126,8 @@
 			isa = PBXGroup;
 			children = (
 				7194C17D22C2564E001E9656 /* SmokeAndMirrorsTests.m */,
+				7142E3CF22E528FB00F69F0C /* RDInvocationTests.m */,
+				71CEE7CD22E5364D001269D8 /* RDValueTests.m */,
 				7194C17F22C2564E001E9656 /* Info.plist */,
 			);
 			path = SmokeAndMirrorsTests;
@@ -294,6 +300,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7194C17E22C2564E001E9656 /* SmokeAndMirrorsTests.m in Sources */,
+				7142E3D022E528FB00F69F0C /* RDInvocationTests.m in Sources */,
+				71CEE7CE22E5364D001269D8 /* RDValueTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

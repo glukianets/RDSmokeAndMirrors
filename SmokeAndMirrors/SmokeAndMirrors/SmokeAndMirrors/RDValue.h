@@ -23,6 +23,7 @@ RDAggregateType *type = [[RDAggregateType alloc] initWithKind:RDAggregateTypeKin
 #define RDMutableValueBox(VALUE) _RD_VALUE(RDMutableValue, __VA_ARGS__)
 #define RDMutableValueTuple(...) _RD_TUPLE(RDMutableValue, __VA_ARGS__)
 
+@class RDValue;
 @class RDMutableValue;
 
 @interface RDValue : NSObject<NSCopying, NSMutableCopying, NSSecureCoding>
@@ -30,12 +31,12 @@ RDAggregateType *type = [[RDAggregateType alloc] initWithKind:RDAggregateTypeKin
 @property (nonatomic, readonly) RDType *type;
 @property (nonatomic, readonly) const char *objCType;
 
-+ (instancetype)valueWithBytes:(const void *)bytes ofType:(RDType *)type;
-+ (instancetype)valueWithBytes:(const void *)bytes objCType:(const char *)type;
++ (instancetype)valueWithBytes:(nullable const void *)bytes ofType:(RDType *)type;
++ (instancetype)valueWithBytes:(nullable const void *)bytes objCType:(const char *)type;
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
-- (nullable instancetype)initWithBytes:(const void *)bytes objCType:(const char *)type;
-- (nullable instancetype)initWithBytes:(const void *)bytes ofType:(RDType *)type NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithBytes:(nullable const void *)bytes objCType:(const char *)type;
+- (nullable instancetype)initWithBytes:(nullable const void *)bytes ofType:(RDType *)type NS_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initTupleWithType:(RDAggregateType *)type, ... NS_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder *)coder NS_DESIGNATED_INITIALIZER;
 
@@ -45,6 +46,10 @@ RDAggregateType *type = [[RDAggregateType alloc] initWithKind:RDAggregateTypeKin
 - (BOOL)getValue:(void *)value type:(RDType *)type atIndex:(NSUInteger)index;
 - (BOOL)getValue:(void *)value objCType:(const char *)type forKey:(nullable NSString *)key;
 - (BOOL)getValue:(void *)value type:(RDType *)type forKey:(nullable NSString *)key;
+
+- (nullable const uint8_t *)bufferType:(RDType *_Nullable *_Nullable)type;
+- (nullable const uint8_t *)bufferAtIndex:(NSUInteger)index type:(RDType *_Nullable *_Nullable)type;
+- (nullable const uint8_t *)bufferforKey:(nullable NSString *)key type:(RDType *_Nullable *_Nullable)type;
 
 - (RDValue *)copy;
 - (RDValue *)copyWithZone:(nullable NSZone *)zone;
@@ -64,6 +69,10 @@ RDAggregateType *type = [[RDAggregateType alloc] initWithKind:RDAggregateTypeKin
 - (BOOL)setValue:(void *)value type:(RDType *)type atIndex:(NSUInteger)index;
 - (BOOL)setValue:(void *)value objCType:(const char *)type forKey:(NSString *)key;
 - (BOOL)setValue:(void *)value type:(RDType *)type forKey:(NSString *)key;
+
+- (nullable uint8_t *)bufferType:(RDType *_Nullable *_Nullable)type;
+- (nullable uint8_t *)bufferAtIndex:(NSUInteger)index type:(RDType *_Nullable *_Nullable)type;
+- (nullable uint8_t *)bufferforKey:(nullable NSString *)key type:(RDType *_Nullable *_Nullable)type;
 
 - (BOOL)setObject:(RDValue *)value atIndexedSubscript:(NSUInteger)index;
 - (BOOL)setObject:(RDValue *)value atKeyedSubscript:(nullable NSString *)key;

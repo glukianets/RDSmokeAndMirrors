@@ -17,7 +17,7 @@ static const char *kBlockDescriptorAssocKey = "RDBlockDescriptorAssocKey";
         @synchronized (self) {
             descriptor = (__bridge RDBlockDescriptor *)objc_getAssociatedObject(self, kBlockDescriptorAssocKey);
             if (descriptor == NULL) {
-                descriptor = (RDBlockDescriptor *)malloc(sizeof(descriptor));
+                descriptor = (RDBlockDescriptor *)malloc(sizeof(RDBlockDescriptor));
                 *descriptor = (RDBlockDescriptor) {
                     .reserved=0,
                     .size=class_getInstanceSize(self),

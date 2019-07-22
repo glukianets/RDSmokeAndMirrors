@@ -103,4 +103,11 @@ NS_ASSUME_NONNULL_BEGIN
 #define RD_FLEX_ARRAY_CREATE(CLS, TYPE, COUNT) RD_FLEX_ARRAY_RAW_CREATE(CLS, sizeof(TYPE), alignof(TYPE), COUNT)
 #define RD_FLEX_ARRAY_ELEMENT(OBJ, TYPE, INDEX) (TYPE *)RD_FLEX_ARRAY_RAW_ELEMENT(OBJ, sizeof(TYPE), alignof(TYPE), INDEX)
 
+static inline void RDRunCleanupBlock(void (^_Nullable *_Nullable block)(id)) {
+    if (block != NULL && *block != nil)
+        (*block)(*block);
+}
+
+#define RD_DEFER __attribute__((cleanup(RDRunCleanupBlock))) __attribute__((unused)) void (^ RD_MACRO_CONCATENATE(_cleanup, __COUNTER__))(id) = ^(void (^_block)(id))
+
 NS_ASSUME_NONNULL_END
