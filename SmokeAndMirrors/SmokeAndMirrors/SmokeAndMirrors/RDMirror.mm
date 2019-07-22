@@ -330,7 +330,17 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 }
 
 - (NSString *)description {
-    return [[NSString stringWithFormat:self.type.format ?: @"%@", self.name ?: @"_"] stringByAppendingString:@";"];
+    NSString *retention = ^{
+        if ([self.type isKindOfClass:RDObjectType.self])
+            switch (self.retention) {
+            case RDRetentionTypeStrong: return @"";
+            case RDRetentionTypeWeak: return @"__weak ";
+            case RDRetentionTypeUnsafeUnretained: return @"__unsafe_unretained ";
+            }
+        else
+            return @"";
+    }();
+    return [NSString stringWithFormat:@"%@%@;", retention, [NSString stringWithFormat:self.type.format ?: @"%@", self.name ?: @"_"]];
 }
 
 @end

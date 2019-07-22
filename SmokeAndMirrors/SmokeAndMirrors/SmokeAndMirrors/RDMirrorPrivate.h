@@ -76,6 +76,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RDIvar()
 
+@property (nonatomic, readwrite) RDRetentionType retention;
+
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
 - (instancetype)initWithIvar:(Ivar)ivar
                      inSmoke:(RDSmoke *)smoke

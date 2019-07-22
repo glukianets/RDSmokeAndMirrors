@@ -139,16 +139,49 @@ RD_FINAL_CLASS
             [NSArray arrayWithObjects:methods count:count];
         });
 
-        NSArray<RDIvar *> *ivars = ({
+        NSArray<RDIvar *> *ivars = ^{
             unsigned int count;
             Ivar *ivarList = class_copyIvarList(cls, &count);
+            if (count == 0)
+                return (void)free(ivarList), @[];
+            
             RDIvar *ivars[count];
             for (unsigned i = 0; i < count; ++i)
                 ivars[i] = [self mirrorForObjcIvar:ivarList[i]];
             free(ivarList);
-            [NSArray arrayWithObjects:ivars count:count];
-        });
-
+                        
+            auto layoutIndices = ^NSIndexSet *(const uint8_t *layout, size_t istart) {
+                NSUInteger startIndex = istart / sizeof(id);
+                if (istart % sizeof(id) != 0 || layout == NULL)
+                    return nil;
+                
+                NSMutableIndexSet *indices = [NSMutableIndexSet indexSet];
+                while (*layout != '\0') {
+                    startIndex += (*layout & 0xf0) >> 4;
+                    size_t len = *layout & 0x0f;
+                    [indices addIndexesInRange:NSMakeRange(startIndex, len)];
+                    startIndex += len;
+                    ++layout;
+                }
+                return indices;
+            };
+            
+            size_t istart = ivars[0].offset;
+            const uint8_t *strongLayout = class_getIvarLayout(cls);
+            NSIndexSet *istrong = layoutIndices(strongLayout, istart);
+            const uint8_t *weakLayout = class_getWeakIvarLayout(cls);
+            NSIndexSet *iweak = layoutIndices(weakLayout, istart);
+            const size_t ss = sizeof(id); // slot size
+            
+            for (unsigned i = 0; i < count; ++i)
+                if (ptrdiff_t offset = ivars[i].offset; offset % ss == 0)
+                    ivars[i].retention = [iweak containsIndex:offset / ss] ? RDRetentionTypeWeak
+                                       : [istrong containsIndex:offset / ss] ? RDRetentionTypeStrong
+                                       : RDRetentionTypeUnsafeUnretained;
+            
+            return [NSArray arrayWithObjects:ivars count:count];
+        }();
+        
         NSArray<RDProperty *> *properties = ({
             unsigned int count;
             Property *propertyList = class_copyPropertyList(cls, &count);

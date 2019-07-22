@@ -3,7 +3,6 @@
 #import "SmokeAndMirrors.h"
 
 @interface SmokeAndMirrorsTests : XCTestCase
-
 @end
 
 @implementation SmokeAndMirrorsTests

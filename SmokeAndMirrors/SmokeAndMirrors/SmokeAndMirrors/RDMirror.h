@@ -112,12 +112,19 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+typedef NS_ENUM(NSUInteger, RDRetentionType) {
+    RDRetentionTypeStrong,
+    RDRetentionTypeWeak,
+    RDRetentionTypeUnsafeUnretained,
+};
+
 RD_FINAL_CLASS
 @interface RDIvar : RDMirror
 
 @property (nonatomic, readonly, nullable) NSString *name;
 @property (nonatomic, readonly) ptrdiff_t offset;
 @property (nonatomic, readonly, nullable) RDType *type;
+@property (nonatomic, readonly) RDRetentionType retention;
 
 @end
 
