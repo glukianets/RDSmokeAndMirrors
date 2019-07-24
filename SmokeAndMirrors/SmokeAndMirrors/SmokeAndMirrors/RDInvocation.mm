@@ -1,5 +1,6 @@
 #import "RDInvocation.h"
 #import "RDPrivate.h"
+#import "RDCommon.h"
 #import <ffi/ffi.h>
 
 NSErrorDomain const RDInvocationErrorDomain = @"RDInvocationErrorDomain";
@@ -27,8 +28,6 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 
 @property (nonatomic, readonly) ffi_cif cif;
 @property (nonatomic, readonly) NSUInteger argCount;
-@property (nonatomic, readonly) ffi_type **argTypes;
-@property (nonatomic, readonly) void **argValues;
 
 @end
 
@@ -40,41 +39,37 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 
 - (void)dealloc {
     for (NSUInteger i = 0; i < _argCount; ++i)
-        [RDType _inv_ffi_type_destroy:_argTypes[i]];
-
-    free(_argTypes);
-    free(_argValues);
+        [RDType _inv_ffi_type_destroy:*RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, i)];
 }
 
 - (instancetype)initWithArguments:(RDValue *)arguments {
     if (arguments == nil)
         return nil;
     
+    NSUInteger count;
+    if (RDAggregateType *type = RD_CAST(arguments.type, RDAggregateType); type != nil) {
+        if (type.kind != RDAggregateTypeKindStruct)
+            return nil;
+        count = type.count;
+    } else if (RDArrayType *type = RD_CAST(arguments.type, RDArrayType); type != nil) {
+        count = type.count;
+    } else {
+        return nil;
+    }
+    count += 2;
+
+    self = RD_FLEX_ARRAY_CREATE(self.class, void *, count * 2);
     self = [super init];
     if (self) {
         _arguments = arguments.copy;
-        
-        NSUInteger count;
-        if (RDAggregateType *type = RD_CAST(arguments.type, RDAggregateType); type != nil) {
-            if (type.kind != RDAggregateTypeKindStruct)
-                return nil;
-            count = type.count;
-        } else if (RDArrayType *type = RD_CAST(arguments.type, RDArrayType); type != nil) {
-            count = type.count;
-        } else {
-            return nil;
-        }
+        _argCount = count;
 
-        _argCount = count + 2;
-        _argTypes = (ffi_type **)calloc(count, sizeof(ffi_type *));
-        _argValues = (void **)calloc(count, sizeof(void *));
-
-        _argTypes[0] = &ffi_type_pointer; // self
-        _argTypes[1] = &ffi_type_pointer; // _cmd
-        for (NSUInteger i = 0; i < count; ++i) {
+        *RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, 0) = &ffi_type_pointer; // self
+        *RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, 1) = &ffi_type_pointer; // _cmd
+        for (NSUInteger i = 2; i < count; ++i) {
             RDType *fieldType = nil;
-            _argValues[i + 2] = (void *)[arguments bufferAtIndex:i type:&fieldType];
-            _argTypes[i + 2] = fieldType._inv_ffi_type;
+            *RD_FLEX_ARRAY_ELEMENT(self, void *, count + i) = (void *)[arguments bufferAtIndex:i - 2 type:&fieldType];
+            *RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, i) = fieldType._inv_ffi_type;
         }
     }
     return self;
@@ -111,13 +106,15 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
         return (void)(error != NULL && (*error = RDMethodTypeSafetyError())), nil;
     RD_DEFER { [RDType _inv_ffi_type_destroy:retFFIType]; };
 
-    if (ffi_status status = ffi_prep_cif(&_cif, FFI_DEFAULT_ABI, (unsigned)_argCount, retFFIType, _argTypes); status != FFI_OK)
+    ffi_type **argTypes = RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, 0);
+    if (ffi_status status = ffi_prep_cif(&_cif, FFI_DEFAULT_ABI, (unsigned)_argCount, retFFIType, argTypes); status != FFI_OK)
         return (void)(error != NULL && (*error = RDFFIError(status))), nil;
 
-    _argValues[0] = &target;
-    _argValues[1] = &selector;
+    void **argValues = RD_FLEX_ARRAY_ELEMENT(self, void *, _argCount);
+    argValues[0] = &target;
+    argValues[1] = &selector;
     RDMutableValue *retValue = [RDMutableValue valueWithBytes:nil ofType:retType];
-    ffi_call(&_cif, method_getImplementation(method), [retValue bufferType:NULL], _argValues);
+    ffi_call(&_cif, method_getImplementation(method), [retValue bufferType:NULL], argValues);
     
     return (void)(error != NULL && (*error = nil)), retValue;
 }
@@ -319,7 +316,7 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
         case RDAggregateTypeKindUnion:
             return NULL;
         case RDAggregateTypeKindStruct:
-            ffi_type *types = (ffi_type *)calloc(1, sizeof(ffi_type) + sizeof(ffi_type *) * self.count + 1);
+            ffi_type *types = (ffi_type *)calloc(1, sizeof(ffi_type) + sizeof(ffi_type *) * (self.count + 1));
             types->type = FFI_TYPE_STRUCT;
             types->size = 0;
             types->alignment = 0;
