@@ -13,8 +13,8 @@ const char *RDBlockInfoGetObjCSignature(const RDBlockInfo *blockInfo) {
         signaturePtr += sizeof(blockInfo->descriptor->size);
         
         if (blockInfo->flags & RDBlockInfoFlagHasCopyDispose) {
-            signaturePtr += sizeof(blockInfo->descriptor->copyHelper);
-            signaturePtr += sizeof(blockInfo->descriptor->disposeHelper);
+            signaturePtr += sizeof(blockInfo->descriptor->copy);
+            signaturePtr += sizeof(blockInfo->descriptor->dispose);
         }
         
         signature = *(const char **)signaturePtr;

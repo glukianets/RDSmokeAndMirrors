@@ -14,8 +14,8 @@ struct RDBlockObjectCapture {
     void *fptr;
 };
 
-void RDBlockObjectTramp(ffi_cif *cif, void *ret, void* args[], void *cap) {
-    __unsafe_unretained id self = (__bridge id)args[0];
+void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
+    __unsafe_unretained id self = *(__autoreleasing id *)args[0];
     RDBlockObjectCapture *capture = (RDBlockObjectCapture *)cap;
     SEL selector = capture->selector;
     
@@ -32,8 +32,6 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void* args[], void *cap) {
         argValues[i] = args[i - 1];
     
     ffi_call(&capture->cifExt, method_getImplementation(method), ret, argValues);
-    
-    return;
 }
 
 
@@ -71,7 +69,7 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void* args[], void *cap) {
     if (sig == nil)
         return;
 
-    NSUInteger extArgCount = sig.arguments.count;    
+    NSUInteger extArgCount = sig.arguments.count;
     {
         ffi_type **argTypes = (ffi_type **)calloc(extArgCount, sizeof(ffi_type *));
 
@@ -110,8 +108,8 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void* args[], void *cap) {
     capture->descriptor = (RDBlockDescriptor) {
         .reserved=0,
         .size=class_getInstanceSize(self),
-        .copyHelper = NULL,
-        .disposeHelper = NULL,
+        .copy = NULL,
+        .dispose = NULL,
         .signature = NULL, // TODO: fill in
     };
     
@@ -134,7 +132,7 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void* args[], void *cap) {
 
         RDBlockObjectCapture *capture = (__bridge RDBlockObjectCapture *)objc_getAssociatedObject(self.class, kBlockCaptureAssocKey);
 
-        _flags = (RDBlockInfoFlags)0;
+        _flags = (RDBlockInfoFlags)(1 | RDBlockInfoFlagIsGlobal);
         _invoke = (void (*)(id, ...))capture->fptr;
         _descriptor = &capture->descriptor;
     }
@@ -149,12 +147,12 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void* args[], void *cap) {
     return self;
 }
 
-- (void)invoke {
-    // do nothing
+- (id)copyWithZone:(NSZone *)zone {
+    return self;
 }
 
-- (void (^)(void))asBlock {
-    return (__bridge void (^)(void))(__bridge void *)self;
+- (void)invoke {
+    // do nothing
 }
 
 @end

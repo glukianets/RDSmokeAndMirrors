@@ -48,7 +48,12 @@ typedef struct {
     return strct;
 }
 
-- (void)invoke {
++ (SEL)selectorForCalling {
+    return @selector(invokeWithItem:);
+}
+
+- (void)invokeWithItem:(id)item {
+    NSLog(@"%@", item);
     [self.expectation fulfill];
 }
 
@@ -93,10 +98,11 @@ typedef struct {
 }
 
 - (void)testBlockject {
-    RDInvocationDummy *dummy = [RDInvocationDummy new];
-    void (^block)(void) = dummy.asBlock;
-    block();
-    [self waitForExpectations:@[dummy.expectation] timeout:0];
+    XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"invoke"];
+    RDInvocationDummy *dummy = [[RDInvocationDummy alloc] initWithExpectation:expectation];
+    void (^__unsafe_unretained block)(id) = (id)dummy;
+    block(@"BATMAN!");
+    [self waitForExpectations:@[expectation] timeout:0];
 }
 
 @end

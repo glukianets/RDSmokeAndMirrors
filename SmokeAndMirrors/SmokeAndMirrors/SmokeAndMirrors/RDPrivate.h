@@ -6,20 +6,24 @@
 NS_ASSUME_NONNULL_BEGIN
 
 // https://clang.llvm.org/docs/Block-ABI-Apple.html
-typedef enum RDBlockInfoFlags : int {
+typedef NS_OPTIONS(int, RDBlockInfoFlags) {
     RDBlockInfoFlagIsNoEscape       = (1 << 23),
+    RDBlockInfoFlagNeedsFreeing     = (1 << 24),
     RDBlockInfoFlagHasCopyDispose   = (1 << 25),
     RDBlockInfoFlagHasConstructor   = (1 << 26),
+    RDBlockInfoFlagIsGC             = (1 << 27),
     RDBlockInfoFlagIsGlobal         = (1 << 28),
     RDBlockInfoFlagHasStret         = (1 << 29),
     RDBlockInfoFlagHasSignature     = (1 << 30),
-} RDBlockInfoFlags;
+};
+
+static inline RDBlockInfoFlags RDBlockInfoFlagsRefCountMask = (RDBlockInfoFlags)0xffff;
 
 extern "C" typedef struct RDBlockDescriptor {
     unsigned long int reserved;
     unsigned long int size;
-    void (*copyHelper)(void *dst, void *src);     // if RDBlockInfoFlagHasCopyDispose
-    void (*disposeHelper)(void *src);             // if RDBlockInfoFlagHasCopyDispose
+    void (*copy)(void *dst, void *src);           // if RDBlockInfoFlagHasCopyDispose
+    void (*dispose)(void *src);                   // if RDBlockInfoFlagHasCopyDispose
     const char *signature;                        // if RDBlockInfoFlagHasSignature
 } RDBlockDescriptor;
 
