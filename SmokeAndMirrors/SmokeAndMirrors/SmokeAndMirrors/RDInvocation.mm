@@ -11,7 +11,7 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define RDFFIError(STATUS) [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationFFIErrorCode userInfo:@{ @"ffi_prep_cif": @(STATUS) }]
-#define RDMethodResulutionError() [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationMethodResolutionErrorCode userInfo:nil]
+#define RDMethodResolutionError() [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationMethodResolutionErrorCode userInfo:nil]
 #define RDMethodTypeSafetyError() [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationMethodTypeSafetyErrorCode userInfo:nil]
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
     
     Method method = class_getInstanceMethod(object_getClass(target), selector);
     if (method == NULL)
-        return (void)(error != NULL && (*error = RDMethodResulutionError())), nil;
+        return (void)(error != NULL && (*error = RDMethodResolutionError())), nil;
 
     RDMethodSignature *sig = [RDMethodSignature signatureWithObjcTypeEncoding:method_getTypeEncoding(method)];
     if (sig == nil)

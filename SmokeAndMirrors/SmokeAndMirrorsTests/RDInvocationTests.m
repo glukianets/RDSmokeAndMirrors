@@ -7,7 +7,7 @@ typedef struct {
     unsigned long x, y;
 } RDDummyStruct;
 
-@interface RDInvocationDummy : NSObject
+@interface RDInvocationDummy : RDBlockObject
 @property (nonatomic, readonly) XCTestExpectation *expectation;
 @end
 
@@ -48,6 +48,10 @@ typedef struct {
     return strct;
 }
 
+- (void)invoke {
+    [self.expectation fulfill];
+}
+
 @end
 
 @interface RDInvocationTests : XCTestCase
@@ -85,6 +89,13 @@ typedef struct {
     XCTAssertEqual(result.b, 10, @"Result returned corrupted");
     XCTAssertEqual(result.x, 40, @"Result returned corrupted");
     XCTAssertEqual(result.y, 30, @"Result returned corrupted");
+    [self waitForExpectations:@[dummy.expectation] timeout:0];
+}
+
+- (void)testBlockject {
+    RDInvocationDummy *dummy = [RDInvocationDummy new];
+    void (^block)(void) = dummy.asBlock;
+    block();
     [self waitForExpectations:@[dummy.expectation] timeout:0];
 }
 

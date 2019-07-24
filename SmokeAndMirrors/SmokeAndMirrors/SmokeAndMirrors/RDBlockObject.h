@@ -4,8 +4,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RDBlockObject : NSObject
 
-+ (instancetype)new NS_UNAVAILABLE;
-- (instancetype)init NS_UNAVAILABLE;
+@property (nonatomic, readonly, class) SEL selectorForCalling;
+@property (nonatomic, readonly) void (^asBlock)(void);
+
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithCFunctionPointer:(void (*_Nonnull)(id /*self*/, ...))fptr;
 
 @end

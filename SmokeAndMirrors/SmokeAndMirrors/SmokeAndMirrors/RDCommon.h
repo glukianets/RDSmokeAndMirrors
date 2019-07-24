@@ -95,7 +95,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #define RD_FLEX_ARRAY_RAW_CREATE(CLS, SIZE, ALIGN, COUNT) class_createInstance(CLS, (ALIGN - (alignof(max_align_t) + class_getInstanceSize(CLS)) % ALIGN) % ALIGN + COUNT * SIZE)
 #define RD_FLEX_ARRAY_RAW_ELEMENT(OBJ, SIZE, ALIGN, INDEX) ({ \
-    __auto_type _obj = (OBJ); __auto_type _index = (INDEX); __auto_type _align = (ALIGN); __auto_type _size = (SIZE); \
+    typeof(OBJ) _obj = (OBJ); size_t _index = (INDEX); size_t _align = (ALIGN); __auto_type _size = (SIZE); \
     uintptr_t _base = (uintptr_t)_obj + class_getInstanceSize(object_getClass(_obj)); \
     (void *)(_base + (_align - _base % _align) % _align + _index * _size); \
 })
