@@ -471,22 +471,46 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 @implementation RDObjectType(RDValue)
 
 - (void)_value_retainBytes:(void *_Nonnull)bytes {
-    *(void **)bytes = (__bridge void *)objc_retain((__bridge id)*(void **)bytes);
+    switch (self.kind) {
+    case RDObjectTypeKindGeneric:
+        *(void **)bytes = (__bridge void *)objc_retain((__bridge id)*(void **)bytes);
+        break;
+    case RDObjectTypeKindBlock:
+        *(void **)bytes = (__bridge void *)objc_retainBlock((__bridge id)*(void **)bytes);
+        break;
+    case RDObjectTypeKindClass:
+        //do nothing
+        break;
+    }
 }
 
 - (void)_value_releaseBytes:(void *_Nonnull)bytes {
-    objc_release((__bridge id)*(void **)bytes);
-}
+    switch (self.kind) {
+    case RDObjectTypeKindGeneric:
+    case RDObjectTypeKindBlock:
+        objc_release((__bridge id)*(void **)bytes);
+        break;
+    case RDObjectTypeKindClass:
+        //do nothing
+        break;
+    }
 
-- (NSString *)_value_describeBytes:(void *)bytes {
-    return [(__bridge id)*(void **)bytes description];
 }
 
 - (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
     if (NSString *description = [(__bridge id)*(void **)bytes description]; description != nil)
         [info addObject:[NSString stringWithFormat:@"Printing description of (%@)%p:\n%@", self.description, *(void **)bytes, description]];
-    
-    return [NSString stringWithFormat:@"(%@)%p", self.description, *(void **)bytes];
+
+    if (void *ptr = *(void **)bytes; ptr != NULL)
+        switch (self.kind) {
+        case RDObjectTypeKindGeneric:
+        case RDObjectTypeKindBlock:
+            return [NSString stringWithFormat:@"(%@)%p", self.description, ptr];
+        case RDObjectTypeKindClass:
+            return [NSString stringWithFormat:@"%@.self", NSStringFromClass(*(Class *)bytes)];
+        }
+    else
+        return @"nil";
 }
 
 @end
@@ -506,35 +530,6 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDBlockType(RDValue)
-@end
-
-@implementation RDBlockType(RDValue)
-
-- (void)_value_retainBytes:(void *)bytes {
-    if (bytes != NULL)
-        *(void **)bytes = (__bridge void *)objc_retainBlock((__bridge id)*(void **)bytes);
-}
-
-- (void)_value_releaseBytes:(void *)bytes {
-    if (bytes != NULL)
-        objc_release((__bridge id)*(void **)bytes);
-}
-
-- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
-    if (NSString *description = [(__bridge id)*(void **)bytes description]; description != nil)
-        [info addObject:[NSString stringWithFormat:@"Printing description of (%@)%p:\n%@", self.description, *(void **)bytes, description]];
-    
-    if (void *ptr = *(void **)bytes; ptr != NULL)
-        return [NSString stringWithFormat:@"(%@)%p", self.description, ptr];
-    else
-        return @"nil";
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 @interface RDPrimitiveType(RDValue)
 @end
 
@@ -542,8 +537,6 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 
 - (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
     switch (self.kind) {
-        case RDPrimitiveTypeKindClass:
-            return [NSString stringWithFormat:@"%@.self", NSStringFromClass(*(Class *)bytes)];
         case RDPrimitiveTypeKindSelector:
             return [NSString stringWithFormat:@"@selector(%s)", sel_getName(*(SEL *)bytes)];
         case RDPrimitiveTypeKindCString:

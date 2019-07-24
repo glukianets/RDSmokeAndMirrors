@@ -27,8 +27,13 @@ typedef NS_ENUM(char, RDTypeEncodingSymbol) {
 typedef NS_ENUM(char, RDSpecialTypeKind) {
     RDSpecialTypeKindUnknown                = '?',
     RDSpecialTypeKindVoid                   = 'v',
-    RDSpecialTypeKindObject                 = '@',
     RDSpecialTypeKindBitfield               = 'b',
+};
+
+typedef NS_ENUM(char, RDObjectTypeKind) {
+    RDObjectTypeKindGeneric                 = '@',
+    RDObjectTypeKindBlock                   = '?',
+    RDObjectTypeKindClass                   = '#',
 };
 
 typedef NS_ENUM(char, RDCompositeTypeKind) {
@@ -40,7 +45,6 @@ typedef NS_ENUM(char, RDCompositeTypeKind) {
 };
 
 typedef NS_ENUM(char, RDPrimitiveTypeKind) {
-    RDPrimitiveTypeKindClass                = '#',
     RDPrimitiveTypeKindSelector             = ':',
     RDPrimitiveTypeKindCString              = '*',
     RDPrimitiveTypeKindAtom                 = '%',
@@ -132,13 +136,9 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDObjectType : RDType
-@property (nonatomic, readonly) NSString *className;
-@property (nonatomic, readonly) NSArray<NSString *> *protocolNames;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDBlockType : RDType
+@property (nonatomic, readonly) RDObjectTypeKind kind;
+@property (nonatomic, readonly, nullable) NSString *className;
+@property (nonatomic, readonly, nullable) NSArray<NSString *> *protocolNames;
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

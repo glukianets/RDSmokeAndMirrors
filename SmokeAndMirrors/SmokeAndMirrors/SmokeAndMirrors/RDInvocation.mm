@@ -182,19 +182,6 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDBlockType(RDInvocation)
-@end
-
-@implementation RDBlockType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    return &ffi_type_pointer;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 @interface RDPrimitiveType(RDInvocation)
 @end
 
@@ -202,7 +189,6 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 
 - (ffi_type *)_inv_ffi_type {
     switch (self.kind) {
-        case RDPrimitiveTypeKindClass:
         case RDPrimitiveTypeKindSelector:
         case RDPrimitiveTypeKindCString:
         case RDPrimitiveTypeKindAtom:

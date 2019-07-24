@@ -184,7 +184,6 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 + (instancetype)instanceWithKind:(RDPrimitiveTypeKind)kind {
 #define RD_INSTANCE(TYPE) @(TYPE): [[RDPrimitiveType alloc] initWithKind:TYPE]
     static NSDictionary *instances = @{
-        RD_INSTANCE(RDPrimitiveTypeKindClass),
         RD_INSTANCE(RDPrimitiveTypeKindSelector),
         RD_INSTANCE(RDPrimitiveTypeKindAtom),
         RD_INSTANCE(RDPrimitiveTypeKindCString),
@@ -211,8 +210,6 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 - (NSString *)format {
     switch (self.kind) {
-        case RDPrimitiveTypeKindClass:
-            return @"Class %@";
         case RDPrimitiveTypeKindSelector:
             return @"SEL %@";
         case RDPrimitiveTypeKindAtom:
@@ -255,8 +252,6 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 + (std::pair<size_t, size_t>)sizeAndAlignmentForKind:(RDPrimitiveTypeKind)kind {
     switch (kind) {
-        case RDPrimitiveTypeKindClass:
-            return { sizeof(Class), alignof(Class) };
         case RDPrimitiveTypeKindSelector:
             return { sizeof(SEL), alignof(SEL) };
         case RDPrimitiveTypeKindCString:
@@ -313,9 +308,26 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 @implementation RDObjectType
 
+- (instancetype)initAsClass {
+    self = [super initWithByteSize:sizeof(Class) alignment:alignof(Class)];
+    if (self) {
+        _kind = RDObjectTypeKindClass;
+    }
+    return self;
+}
+
+- (instancetype)initWithBlockArgumentString:(NSString *)string {
+    self = [super initWithByteSize:sizeof(void (^)(...)) alignment:alignof(void (^)(...))];
+    if (self) {
+        _kind = RDObjectTypeKindBlock;
+    }
+    return self;
+}
+
 - (instancetype)initWithClassName:(NSString *)cls protocolNames:(NSArray<NSString *> *)protocols {
     self = [super initWithByteSize:sizeof(id) alignment:alignof(id)];
     if (self) {
+        _kind = RDObjectTypeKindGeneric;
         _className = cls.copy;
         _protocolNames = protocols.copy;
     }
@@ -323,39 +335,30 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 }
 
 - (NSString *)format {
-    NSString *protocols = self.protocolNames.count == 0 ? @"" : [NSString stringWithFormat:@"<%@>", [self.protocolNames componentsJoinedByString:@", "]];
-    NSString *cls = self.className.length > 0 ? self.className : nil;
-    return [NSString stringWithFormat:@"%@%@ %@%%@", cls ? cls : @"id", protocols, cls ? @"*" : @""];
+    switch (self.kind) {
+    case RDObjectTypeKindClass:
+        return @"Class %@";
+    case RDObjectTypeKindBlock:
+        return @"void (^%@)(...)";
+    case RDObjectTypeKindGeneric:
+        return ({
+            NSString *protocols = self.protocolNames.count == 0 ? @"" : [NSString stringWithFormat:@"<%@>", [self.protocolNames componentsJoinedByString:@", "]];
+            NSString *cls = self.className.length > 0 ? self.className : nil;
+            [NSString stringWithFormat:@"%@%@ %@%%@", cls ? cls : @"id", protocols, cls ? @"*" : @""];
+        });
+    }
 }
 
 - (BOOL)isEqualToType:(RDType *)type {
     return [super isEqualToType:type]
         || [type isKindOfClass:RDObjectType.self]
+        && (self.kind == RDObjectTypeKindGeneric || self.kind == ((RDObjectType *)type).kind)
         && areEqual(((RDObjectType *)type).className, self.className)
         && areEqual(((RDObjectType *)type).protocolNames, self.protocolNames);
 }
 
 - (BOOL)isAssignableFromType:(RDType *)type {
     return [type isKindOfClass:RDObjectType.self];
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDBlockType
-
-- (instancetype)initWithArgumentString:(NSString *)string {
-    self = [super initWithByteSize:sizeof(void (^)(void)) alignment:alignof(void (^)(void))];
-    return self;
-}
-
-- (NSString *)format {
-    return @"void (^%@)(...)";
-}
-
-- (BOOL)isEqualToType:(RDType *)type {
-    return [type isKindOfClass:RDBlockType.self];
 }
 
 @end
@@ -940,7 +943,6 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 ++(*encoding);
                 return RDVoidType.instance;
             
-            case RDPrimitiveTypeKindClass:
             case RDPrimitiveTypeKindSelector:
             case RDPrimitiveTypeKindChar:
             case RDPrimitiveTypeKindUnsignedChar:
@@ -963,13 +965,18 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
                 return [RDPrimitiveType instanceWithKind:(RDPrimitiveTypeKind)*((*encoding)++)];
             }
                 
-            case RDSpecialTypeKindObject: {
+            case RDObjectTypeKindClass: {
                 ++(*encoding);
-                if (**encoding == RDSpecialTypeKindUnknown) {
+                return [[RDObjectType alloc] initAsClass];
+            }
+            
+            case RDObjectTypeKindGeneric: {
+                ++(*encoding);
+                if (**encoding == RDObjectTypeKindBlock) {
                     NSString *args = nil;
                     if (*(++(*encoding)) == RDTypeEncodingSymbolBlockArgsBegin)
                         args = parseString(encoding, RDTypeEncodingSymbolBlockArgsEnd);
-                    return [[RDBlockType alloc] initWithArgumentString:args];
+                    return [[RDObjectType alloc] initWithBlockArgumentString:args];
                 }
                 NSCharacterSet *separators = [NSCharacterSet characterSetWithCharactersInString:@"<>"];
                 NSArray<NSString *> *components = [parseQuotedString(encoding) componentsSeparatedByCharactersInSet:separators];
