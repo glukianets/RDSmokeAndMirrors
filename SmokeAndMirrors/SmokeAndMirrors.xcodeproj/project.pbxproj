@@ -15,7 +15,7 @@
 		716A1CBC22C2683E002BA968 /* RDSmoke.h in Headers */ = {isa = PBXBuildFile; fileRef = 716A1CBA22C2683E002BA968 /* RDSmoke.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		716A1CBD22C2683E002BA968 /* RDSmoke.mm in Sources */ = {isa = PBXBuildFile; fileRef = 716A1CBB22C2683E002BA968 /* RDSmoke.mm */; };
 		7174A4A422DB512200EA0D70 /* RDBlockObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 7174A4A222DB512200EA0D70 /* RDBlockObject.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		7174A4A522DB512200EA0D70 /* RDBlockObject.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7174A4A322DB512200EA0D70 /* RDBlockObject.mm */; };
+		7174A4A522DB512200EA0D70 /* RDBlockObject.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7174A4A322DB512200EA0D70 /* RDBlockObject.mm */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		7174A4A722DB526E00EA0D70 /* RDPrivate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7174A4A622DB526E00EA0D70 /* RDPrivate.mm */; };
 		7194C17922C2564E001E9656 /* SmokeAndMirrors.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7194C16F22C2564D001E9656 /* SmokeAndMirrors.framework */; };
 		7194C17E22C2564E001E9656 /* SmokeAndMirrorsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 7194C17D22C2564E001E9656 /* SmokeAndMirrorsTests.m */; };

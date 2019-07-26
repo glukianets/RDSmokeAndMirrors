@@ -9,6 +9,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithCFunctionPointer:(void (*_Nonnull)(id /*self*/, ...))fptr;
 
+- (void (^)(void))asBlock;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -14,6 +14,20 @@ struct RDBlockObjectCapture {
     void *fptr;
 };
 
+@interface RDType(RDInvocation)
+
+- (ffi_type *_Nullable)_inv_ffi_type;
++ (void)_inv_ffi_type_destroy:(ffi_type *)type;
+
+@end
+
+@implementation RDBlockObject {
+    RDBlockInfoFlags _flags;
+    int _reserved;
+    void (*_invoke)(id, ...);
+    RDBlockDescriptor *_descriptor;
+}
+
 void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
     __unsafe_unretained id self = *(__autoreleasing id *)args[0];
     RDBlockObjectCapture *capture = (RDBlockObjectCapture *)cap;
@@ -34,40 +48,25 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
     ffi_call(&capture->cifExt, method_getImplementation(method), ret, argValues);
 }
 
-
-@interface RDType(RDInvocation)
-
-- (ffi_type *_Nullable)_inv_ffi_type;
-+ (void)_inv_ffi_type_destroy:(ffi_type *)type;
-
-@end
-
-@implementation RDBlockObject {
-    RDBlockInfoFlags _flags;
-    int _reserved;
-    void (*_invoke)(id, ...);
-    RDBlockDescriptor *_descriptor;
+void RDBlockObjectCopy(void *dst, void *src) {
+    // do nothing;
 }
 
-+ (void)initialize {
-    if (self == RDBlockObject.self)
-        return;
-    
+void RDBlockObjectDispose(void *block) {
+    [(__bridge id)block dealloc];
+}
+
+RDBlockObjectCapture *RDBlockObjectCaptureForSelectorInClass(SEL selector, Class cls) {
     RDBlockObjectCapture *capture = (RDBlockObjectCapture *)calloc(1, sizeof(RDBlockObjectCapture));
-        
-    SEL selector = [self selectorForCalling];
-    if (selector == NULL)
-        return;
-    
     capture->selector = selector;
         
-    Method method = class_getInstanceMethod(self, selector);
+    Method method = class_getInstanceMethod(cls, selector);
     if (method == NULL)
-        return;
+        return NULL;
 
     RDMethodSignature *sig = [RDMethodSignature signatureWithObjcTypeEncoding:method_getTypeEncoding(method)];
     if (sig == nil)
-        return;
+        return NULL;
 
     NSUInteger extArgCount = sig.arguments.count;
     {
@@ -77,14 +76,14 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
             if (ffi_type *type = sig.arguments[i].type._inv_ffi_type; type != NULL)
                 argTypes[i] = type;
             else
-                return;
+                return NULL;
 
         ffi_type *retType = sig.returnValue.type._inv_ffi_type;
         if (retType == NULL)
-            return;
+            return NULL;
         
         if (ffi_prep_cif(&capture->cifExt, FFI_DEFAULT_ABI, (unsigned)extArgCount, retType, argTypes) != FFI_OK)
-            return;
+            return NULL;
     }
     
     NSUInteger intArgCount = extArgCount - 1;
@@ -95,23 +94,39 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
         
         ffi_type *retType = capture->cifExt.rtype;
         if (ffi_prep_cif(&capture->cifInt, FFI_DEFAULT_ABI, (unsigned)intArgCount, retType, argTypes) != FFI_OK)
-            return;
+            return NULL;
     }
     
     ffi_closure *closure = (ffi_closure *)ffi_closure_alloc(sizeof(ffi_closure), &capture->fptr);
     if (closure == NULL)
-        return;
+        return NULL;
         
     if (ffi_prep_closure_loc(closure, &capture->cifInt, RDBlockObjectTramp, capture , capture->fptr) != FFI_OK)
-        return;
+        return NULL;
 
     capture->descriptor = (RDBlockDescriptor) {
         .reserved=0,
-        .size=class_getInstanceSize(self),
-        .copy = NULL,
-        .dispose = NULL,
+        .size=class_getInstanceSize(cls),
+        .copy = RDBlockObjectCopy,
+        .dispose = RDBlockObjectDispose,
         .signature = NULL, // TODO: fill in
     };
+
+    return capture;
+}
+
++ (void)initialize {
+    if (self == RDBlockObject.self)
+        return;
+            
+    SEL selector = [self selectorForCalling];
+    if (selector == NULL)
+        return;
+    
+    RDBlockObjectCapture *capture = RDBlockObjectCaptureForSelectorInClass(selector, self);
+    if (capture == NULL)
+        [NSException raise:NSInternalInconsistencyException
+                    format:@"Couldn't form capture for @selector(%s) in %@", sel_getName(selector), self];
     
     objc_setAssociatedObject(self, kBlockCaptureAssocKey, (__bridge id)capture, OBJC_ASSOCIATION_ASSIGN);
 }
@@ -132,11 +147,11 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
 
         RDBlockObjectCapture *capture = (__bridge RDBlockObjectCapture *)objc_getAssociatedObject(self.class, kBlockCaptureAssocKey);
 
-        _flags = (RDBlockInfoFlags)(1 | RDBlockInfoFlagIsGlobal);
+        _flags = (RDBlockInfoFlags)(RDBlockInfoFlagHasCopyDispose | RDBlockInfoFlagNeedsFreeing);
         _invoke = (void (*)(id, ...))capture->fptr;
         _descriptor = &capture->descriptor;
     }
-    return self;
+    return [self retain];
 }
 
 - (instancetype)initWithCFunctionPointer:(void (*)(id, ...))fptr {
@@ -153,6 +168,31 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
 
 - (void)invoke {
     // do nothing
+}
+
+- (id)retain {
+    return Block_copy(self);
+}
+
+- (oneway void)release {
+    Block_release(self);
+}
+
+- (NSUInteger)retainCount {
+    return _flags & RDBlockInfoFlagsRefCountMask;
+}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-missing-super-calls"
+- (void)dealloc {
+    objc_destructInstance(self);
+    // _Block_release will call _Block_deallocator and release memory itself,
+    // so we don't want NSObject to do the same; therefore, no [super dealloc];
+}
+#pragma clang diagnostic pop
+
+- (void (^)(void))asBlock {
+    return (id)self;
 }
 
 @end
