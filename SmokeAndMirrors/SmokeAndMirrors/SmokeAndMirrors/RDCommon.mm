@@ -7,9 +7,9 @@ RD_EXTERN RDBlockInfo *RDGetBlockInfo(id block) {
 }
 
 RD_EXTERN RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo) {
-    if (blockInfo->flags & RDBlockInfoFlagIsGlobal || blockInfo->isa == &_NSConcreteGlobalBlock)
+    if (blockInfo->flags & RDBlockInfoFlagIsGlobal || (uintptr_t)blockInfo->isa == (uintptr_t)_NSConcreteGlobalBlock)
         return RDBlockKindGlobal;
-    else if (blockInfo->isa == &_NSConcreteStackBlock)
+    else if ((uintptr_t)blockInfo->isa == (uintptr_t)_NSConcreteStackBlock)
         return RDBlockKindStack;
     else if (blockInfo->flags & RDBlockInfoFlagNeedsFreeing)
         return RDBlockKindMalloc;

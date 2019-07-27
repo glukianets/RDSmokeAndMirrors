@@ -28,7 +28,6 @@ typedef struct objc_method_description MethodDescription;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
 @interface RDClass : RDMirror
 
 @property (nonatomic, readonly, nullable) RDClass *super;
@@ -42,6 +41,7 @@ RD_FINAL_CLASS
 @property (nonatomic, readonly) NSArray<RDProperty *> *properties;
 @property (nonatomic, readonly) NSArray<RDMethod *> *methods;
 @property (nonatomic, readonly) NSArray<RDIvar *> *ivars;
+@property (nonatomic, readonly) size_t instanceSize;
 
 @end
 
@@ -59,7 +59,6 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
 @interface RDProtocolMethod : RDProtocolItem
 
 @property (nonatomic, readonly) RDMethodSignature *signature;
@@ -69,7 +68,6 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
 @interface RDProtocolProperty : RDProtocolItem
 
 @property (nonatomic, readonly) NSString *name;
@@ -80,7 +78,6 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
 @interface RDProtocol : RDMirror
 
 @property (nonatomic, readonly) NSString *name;
@@ -92,7 +89,6 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
 @interface RDMethod : RDMirror
 
 @property (nonatomic, readonly) SEL selector;
@@ -102,7 +98,6 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
 @interface RDProperty : RDMirror
 
 @property (nonatomic, readonly) NSString *name;
@@ -118,7 +113,6 @@ typedef NS_ENUM(NSUInteger, RDRetentionType) {
     RDRetentionTypeUnsafeUnretained,
 };
 
-RD_FINAL_CLASS
 @interface RDIvar : RDMirror
 
 @property (nonatomic, readonly, nullable) NSString *name;
@@ -130,11 +124,10 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RD_FINAL_CLASS
-@interface RDBlock : RDMirror
-@property (nonatomic, readonly) size_t size;
-@property (nonatomic, readonly) RDClass *clss;
+@interface RDBlock : RDClass
+
 @property (nonatomic, readonly, nullable) RDMethodSignature *signature;
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

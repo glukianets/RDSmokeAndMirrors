@@ -31,9 +31,24 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDClass()
+
 @property (nonatomic, readonly) __unsafe_unretained Class objcClass;
 @property (nonatomic, readonly) __unsafe_unretained Class objcSuper;
 @property (nonatomic, readonly) __unsafe_unretained Class objcMeta;
+
+- (instancetype)initWithObjcClass:(Class)cls
+                          inSmoke:(RDSmoke *)smoke
+                         withName:(NSString *)name
+                          version:(int)version
+                     instanceSize:(size_t)instanceSize
+                            image:(NSString *)image
+                             supr:(Class)supr
+                             meta:(Class)meta
+                        protocols:(NSArray<RDProtocol *> *)protocols
+                          methods:(NSArray<RDMethod *> *)methods
+                            ivars:(NSArray<RDIvar *> *)ivars
+                       properties:(NSArray<RDProperty *> *)properties NS_DESIGNATED_INITIALIZER;
+
 @end
 
 @implementation RDClass
@@ -44,6 +59,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
                           inSmoke:(RDSmoke *)smoke
                          withName:(NSString *)name
                           version:(int)version
+                     instanceSize:(size_t)instanceSize
                             image:(NSString *)image
                              supr:(Class)supr
                              meta:(Class)meta
@@ -59,11 +75,114 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
         _objcMeta = meta;
         _name = name.copy;
         _version = version;
+        _instanceSize = instanceSize;
         _imageName = image.copy;
         _protocols = protocols.copy;
         _methods = methods.copy;
         _ivars = ivars.copy;
         _properties = properties.copy;
+        _objcSuper = class_getSuperclass(cls);
+        _objcMeta = object_getClass(cls);
+    }
+    return self;
+}
+
+- (instancetype)initWithObjcClass:(__unsafe_unretained Class)cls inSmoke:(RDSmoke *)smoke {
+    if (cls == Nil)
+        return nil;
+    
+    self = [super initWithSmoke:smoke];
+    if (self) {
+        _objcClass = cls;
+        _objcSuper = class_getSuperclass(cls);
+        _objcMeta = object_getClass(cls);
+
+        _name = ({
+            const char *name = class_getName(cls);
+            name == NULL ? nil : [NSString stringWithUTF8String:class_getName(cls)];
+        });
+
+       _imageName = ({
+            const char *imageName = class_getImageName(cls);
+            imageName == NULL ? nil : [NSString stringWithUTF8String:imageName];
+        });
+
+        _version = class_getVersion(cls);
+
+        _instanceSize = class_getInstanceSize(cls);
+        
+        _protocols = ({
+            unsigned count;
+            Protocol *__unsafe_unretained *protocolList = class_copyProtocolList(cls, &count);
+            RDProtocol *protocols[count];
+            for (unsigned i = 0; i < count; ++i)
+                protocols[i] = [smoke mirrorForObjcProtocol:protocolList[i]];
+            free(protocolList);
+            [NSArray arrayWithObjects:protocols count:count];
+        });
+
+        _methods = ({
+            unsigned count;
+            Method *methodList = class_copyMethodList(cls, &count);
+            RDMethod *methods[count];
+            for (unsigned i = 0; i < count; ++i)
+                methods[i] = [smoke mirrorForObjcMethod:methodList[i]];
+            free(methodList);
+            [NSArray arrayWithObjects:methods count:count];
+        });
+
+        _ivars = ^{
+            unsigned int count;
+            Ivar *ivarList = class_copyIvarList(cls, &count);
+            if (count == 0)
+                return (void)free(ivarList), @[];
+            
+            RDIvar *ivars[count];
+            for (unsigned i = 0; i < count; ++i)
+                ivars[i] = [smoke mirrorForObjcIvar:ivarList[i]];
+            free(ivarList);
+                        
+            auto layoutIndices = ^NSIndexSet *(const uint8_t *layout, size_t istart) {
+                NSUInteger startIndex = istart / sizeof(id);
+                if (istart % sizeof(id) != 0 || layout == NULL)
+                    return nil;
+                
+                NSMutableIndexSet *indices = [NSMutableIndexSet indexSet];
+                while (*layout != '\0') {
+                    startIndex += (*layout & 0xf0) >> 4;
+                    size_t len = *layout & 0x0f;
+                    [indices addIndexesInRange:NSMakeRange(startIndex, len)];
+                    startIndex += len;
+                    ++layout;
+                }
+                return indices;
+            };
+            
+            size_t istart = ivars[0].offset;
+            const uint8_t *strongLayout = class_getIvarLayout(cls);
+            NSIndexSet *istrong = layoutIndices(strongLayout, istart);
+            const uint8_t *weakLayout = class_getWeakIvarLayout(cls);
+            NSIndexSet *iweak = layoutIndices(weakLayout, istart);
+            const size_t ss = sizeof(id); // slot size
+            
+            for (unsigned i = 0; i < count; ++i)
+                if (ptrdiff_t offset = ivars[i].offset; offset % ss == 0)
+                    ivars[i].retention = [iweak containsIndex:offset / ss] ? RDRetentionTypeWeak
+                                       : [istrong containsIndex:offset / ss] ? RDRetentionTypeStrong
+                                       : RDRetentionTypeUnsafeUnretained;
+            
+            return [NSArray arrayWithObjects:ivars count:count];
+        }();
+        
+        _properties = ({
+            unsigned int count;
+            Property *propertyList = class_copyPropertyList(cls, &count);
+            RDProperty *properties[count];
+            for (unsigned i = 0; i < count; ++i)
+                properties[i] = [smoke mirrorForObjcProperty:propertyList[i]];
+            free(propertyList);
+            [NSArray arrayWithObjects:properties count:count];
+        });
     }
     return self;
 }
@@ -105,7 +224,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 - (RDClass *)meta {
     if (_meta == nil) {
-        if (self.objcMeta == Nil)
+        if (self.objcMeta == Nil || self.objcMeta == self.objcClass)
             return self;
         else
             _meta = [self.smoke mirrorForObjcClass:self.objcMeta];
@@ -192,20 +311,69 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDProtocol
 
-- (instancetype)initWithObjcProtocol:(Protocol *)protocol
-                             inSmoke:(RDSmoke *)smoke
-                            withName:(NSString *)name
-                           protocols:(NSArray<RDProtocol *> *)protocols
-                              methos:(NSArray<RDProtocolMethod *> *)methods
-                          properties:(NSArray<RDProtocolProperty *> *)properties
-{
+- (instancetype)initWithObjcProtocol:(Protocol *)protocol inSmoke:(RDSmoke *)smoke {
+    static NSSet<NSString *> *excludedProtocolNames = [NSSet setWithObjects:
+                                                       @"NSItemProviderReading",
+                                                       @"_NSAsynchronousPreparationInputParameters",
+                                                       @"SFDigestOperation",
+                                                       @"SFKeyDerivingOperation",
+                                                       @"MPSCNNBatchNormalizationDataSource",
+                                                       @"NSItemProviderWriting",
+                                                       @"ROCKForwardingInterposable",
+                                                       @"NSSecureCoding",
+                                                       nil];
+
     self = [super initWithSmoke:smoke];
     if (self) {
-        _protocol = protocol;
-        _name = name.copy;
-        _protocols = protocols.copy;
-        _methods = methods.copy;
-        _properties = properties.copy;
+        _name = ({
+            const char *name = protocol_getName(protocol);
+            name == NULL ? nil : [NSString stringWithUTF8String:name];
+        });
+        
+        _protocols = ({
+            unsigned count;
+            Protocol *__unsafe_unretained *protocolList = protocol_copyProtocolList(protocol, &count);
+            RDProtocol *protocols[count];
+            for (unsigned i = 0; i < count; ++i)
+                protocols[i] = [smoke mirrorForObjcProtocol:protocolList[i]];
+            free(protocolList);
+            [NSArray arrayWithObjects:protocols count:count];
+        });
+
+        if ([excludedProtocolNames containsObject:_name])
+            return self;
+        
+        _properties = ({
+            NSMutableArray<RDProtocolProperty *> *properties = [NSMutableArray array];
+            for (BOOL isRequired : {YES, NO}) {
+                for (BOOL isInstanceLevel : {YES, NO}) {
+                    unsigned int count = 0;
+                    Property *propertyList = protocol_copyPropertyList2(protocol, &count, isRequired, isInstanceLevel);
+                    for (unsigned i = 0; i < count; ++i)
+                        [properties addObject:[[RDProtocolProperty alloc] initWithObjcCounterpart:propertyList[i]
+                                                                                         required:isRequired
+                                                                                       classLevel:!isInstanceLevel]];
+                    free(propertyList);
+                }
+            }
+            properties;
+        });
+
+        _methods = ({
+            NSMutableArray<RDProtocolMethod *> *methods = [NSMutableArray array];
+            for (BOOL isRequired : {YES, NO}) {
+                for (BOOL isInstanceLevel : {YES, NO}) {
+                    unsigned count = 0;
+                    MethodDescription *methodList = protocol_copyMethodDescriptionList(protocol, isRequired, isInstanceLevel, &count);
+                    for (unsigned i = 0; i < count; ++i)
+                        [methods addObject:[[RDProtocolMethod alloc] initWithObjcCounterpart:methodList[i]
+                                                                                    required:isRequired
+                                                                                  classLevel:!isInstanceLevel]];
+                    free(methodList);
+                }
+            }
+            methods;
+        });
     }
     return self;
 }
@@ -253,16 +421,19 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDMethod
 
-- (instancetype)initWithObjcMethod:(Method)method
-                           inSmoke:(RDSmoke *)smoke
-                      withSelector:(SEL)selector
-                      andSignature:(RDMethodSignature *)signature
-{
+- (instancetype)initWithObjcMethod:(Method)method inSmoke:(RDSmoke *)smoke {
     self = [super initWithSmoke:smoke];
     if (self) {
-        _method = method;
-        _selector = selector;
-        _signature = signature;
+        _selector = method_getName(method);
+        _signature = ({
+            RDMethodSignature *signature = [RDMethodSignature signatureWithObjcTypeEncoding:method_getTypeEncoding(method)];
+            NSUInteger argCount = 0;
+            for (const char *sel = sel_getName(_selector); *sel != '\0'; ++sel)
+                if (*sel == ':')
+                    ++argCount;
+
+            signature.arguments.count == argCount + 2 ? signature : nil;
+        });
     }
     return self;
 }
@@ -283,16 +454,17 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDProperty
 
-- (instancetype)initWithProperty:(Property)property
-                         inSmoke:(RDSmoke *)smoke
-                        withName:(NSString *)name
-                    andSignature:(RDPropertySignature *)signature
-{
+- (instancetype)initWithObjCProperty:(Property)property inSmoke:(RDSmoke *)smoke {
     self = [super initWithSmoke:smoke];
     if (self) {
         _property = property;
-        _name = name.copy;
-        _signature = signature;
+
+        _name = ({
+            const char *name = property_getName(property);
+            name == NULL ? nil : [NSString stringWithUTF8String:name];
+        });
+        
+        _signature = [RDPropertySignature signatureWithObjcTypeEncoding:property_getAttributes(property)];
     }
     return self;
 }
@@ -313,18 +485,24 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDIvar
 
-- (instancetype)initWithIvar:(Ivar)ivar
-                     inSmoke:(RDSmoke *)smoke
-                    withName:(NSString *)name
-                    atOffset:(ptrdiff_t)offset
-                    withType:(RDType *)type
-{
+- (instancetype)initWithObjCIvar:(Ivar)ivar inSmoke:(RDSmoke *)smoke {
     self = [super initWithSmoke:smoke];
     if (self) {
         _ivar = ivar;
-        _name = name.copy;
-        _offset = offset;
-        _type = type;
+        
+        _offset = ivar_getOffset(ivar);
+        
+        _name = ({
+            const char *name = ivar_getName(ivar);
+            name == NULL ? nil : [NSString stringWithUTF8String:name];
+        });
+        
+        _type = ({
+            RDType *type = nil;
+            if (const char *encoding = ivar_getTypeEncoding(ivar); encoding != NULL && *encoding != '\0')
+                type = [RDType typeWithObjcTypeEncoding:encoding];
+            type;
+        });
     }
     return self;
 }
@@ -357,18 +535,23 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDBlock
 
-- (instancetype)initWithKind:(RDBlockKind)kind
-                     inSmoke:(RDSmoke *)smoke
-                        clss:(RDClass *)clss
-                        size:(size_t)size
-                   signature:(RDMethodSignature *)signature
-{
-    self = [super initWithSmoke:smoke];
+- (instancetype)initWithBlockInfo:(RDBlockInfo *)blockInfo inSmoke:(RDSmoke *)smoke {
+    RDClass *prototype = [smoke mirrorForObjcClass:blockInfo->isa];
+    self = [super initWithObjcClass:prototype.objcClass
+                            inSmoke:smoke
+                           withName:prototype.name
+                            version:prototype.version
+                       instanceSize:RDBlockInfoGetInstanceSize(blockInfo)
+                              image:prototype.imageName
+                               supr:prototype.objcSuper
+                               meta:prototype.objcMeta
+                          protocols:prototype.protocols
+                            methods:prototype.methods
+                              ivars:prototype.ivars
+                         properties:prototype.properties];
     if (self) {
-        _kind = kind;
-        _clss = clss;
-        _size = size;
-        _signature = signature;
+        _signature = [RDMethodSignature signatureWithObjcTypeEncoding:RDBlockInfoGetObjCSignature(blockInfo)];
+        _kind = RDBlockInfoGetKind(blockInfo);
     }
     return self;
 }
@@ -442,3 +625,5 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
     
     return [NSString stringWithFormat:@"@property %@%@;", [attributes stringByAppendingString:@" "] ?: @"", typeName];
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

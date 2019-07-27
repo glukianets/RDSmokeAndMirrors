@@ -25,7 +25,7 @@ typedef struct RDBlockDescriptor {
 } RDBlockDescriptor;
 
 typedef struct RDBlockInfo {
-    void *isa;
+    __unsafe_unretained Class isa;
     RDBlockInfoFlags flags;
     int reserved;
     void (*invoke)(void *, ...);
@@ -46,7 +46,7 @@ RD_EXTERN RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo);
 RD_EXTERN const char *RDBlockInfoGetObjCSignature(const RDBlockInfo *blockInfo);
 RD_EXTERN void (*RDBlockInfoGetDisposeFunction(const RDBlockInfo *blockInfo))(void *src);
 RD_EXTERN void (*RDBlockInfoGetCopyFunction(const RDBlockInfo *blockInfo))(void *dst, void *src);
-RD_EXTERN size_t RDBlockInfoGetBlockSize(const RDBlockInfo *blockInfo);
+RD_EXTERN size_t RDBlockInfoGetInstanceSize(const RDBlockInfo *blockInfo);
 
 RD_EXTERN RDBlockKind RDBlockGetKind(id block);
 RD_EXTERN const char *_Nullable RDBlockGetObjCSignature(id block);

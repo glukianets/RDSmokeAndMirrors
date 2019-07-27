@@ -8,17 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RDClass()
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithObjcClass:(Class)cls
-                          inSmoke:(RDSmoke *)smoke
-                         withName:(NSString *)name
-                          version:(int)version
-                            image:(NSString *)image
-                             supr:(nullable Class)supr
-                             meta:(nullable Class)meta
-                        protocols:(NSArray<RDProtocol *> *)protocols
-                          methods:(NSArray<RDMethod *> *)methods
-                            ivars:(NSArray<RDIvar *> *)ivars
-                       properties:(NSArray<RDProperty *> *)properties NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjcClass:(__unsafe_unretained Class)cls inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -39,12 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RDProtocol()
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithObjcProtocol:(Protocol *)protocol
-                             inSmoke:(RDSmoke *)smoke
-                            withName:(NSString *)name
-                           protocols:(NSArray<RDProtocol *> *)protocols
-                              methos:(NSArray<RDProtocolMethod *> *)methods
-                          properties:(NSArray<RDProtocolProperty *> *)properties NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjcProtocol:(Protocol *)protocol inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -53,10 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RDMethod()
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithObjcMethod:(Method)method
-                           inSmoke:(RDSmoke *)smoke
-                      withSelector:(SEL)selector
-                      andSignature:(nullable RDMethodSignature *)signature NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjcMethod:(Method)method inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -65,10 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RDProperty()
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithProperty:(Property)property
-                         inSmoke:(RDSmoke *)smoke
-                        withName:(NSString *)name
-                    andSignature:(RDPropertySignature *)signature NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjCProperty:(Property)property inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -79,11 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readwrite) RDRetentionType retention;
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithIvar:(Ivar)ivar
-                     inSmoke:(RDSmoke *)smoke
-                    withName:(nullable NSString *)name
-                    atOffset:(ptrdiff_t)offset
-                    withType:(nullable RDType *)type NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjCIvar:(Ivar)ivar inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -92,11 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RDBlock()
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithKind:(RDBlockKind)kind
-                     inSmoke:(RDSmoke *)smoke
-                        clss:(RDClass *)clss
-                        size:(size_t)size
-                   signature:(RDMethodSignature *_Nullable)signature NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithBlockInfo:(RDBlockInfo *)info inSmoke:(RDSmoke *)smoke;
 
 @end
 
