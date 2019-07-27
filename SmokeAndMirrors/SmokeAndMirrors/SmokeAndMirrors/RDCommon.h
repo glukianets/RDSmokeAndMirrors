@@ -43,13 +43,13 @@ RD_EXTERN RDBlockInfoFlags const RDBlockInfoFlagsRefCountMask;
 RD_EXTERN RDBlockInfo *RDGetBlockInfo(id block);
 
 RD_EXTERN RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo);
-RD_EXTERN const char *RDBlockInfoGetObjCSignature(const RDBlockInfo *blockInfo);
+RD_EXTERN const char *RDBlockInfoGetObjcSignature(const RDBlockInfo *blockInfo);
 RD_EXTERN void (*RDBlockInfoGetDisposeFunction(const RDBlockInfo *blockInfo))(void *src);
 RD_EXTERN void (*RDBlockInfoGetCopyFunction(const RDBlockInfo *blockInfo))(void *dst, void *src);
 RD_EXTERN size_t RDBlockInfoGetInstanceSize(const RDBlockInfo *blockInfo);
 
 RD_EXTERN RDBlockKind RDBlockGetKind(id block);
-RD_EXTERN const char *_Nullable RDBlockGetObjCSignature(id block);
+RD_EXTERN const char *_Nullable RDBlockGetObjcSignatureRDBlockGetObjcSignature(id block);
 RD_EXTERN void (*RDBlockGetDisposeFunction(id block))(void *src);
 RD_EXTERN void (*RDBlockGetCopyFunction(id block))(void *dst, void *src);
 RD_EXTERN size_t RDBlockGetSize(id block);

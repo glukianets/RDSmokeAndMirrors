@@ -454,7 +454,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDProperty
 
-- (instancetype)initWithObjCProperty:(Property)property inSmoke:(RDSmoke *)smoke {
+- (instancetype)initWithObjcProperty:(Property)property inSmoke:(RDSmoke *)smoke {
     self = [super initWithSmoke:smoke];
     if (self) {
         _property = property;
@@ -485,7 +485,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @implementation RDIvar
 
-- (instancetype)initWithObjCIvar:(Ivar)ivar inSmoke:(RDSmoke *)smoke {
+- (instancetype)initWithObjcIvar:(Ivar)ivar inSmoke:(RDSmoke *)smoke {
     self = [super initWithSmoke:smoke];
     if (self) {
         _ivar = ivar;
@@ -550,7 +550,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
                               ivars:prototype.ivars
                          properties:prototype.properties];
     if (self) {
-        _signature = [RDMethodSignature signatureWithObjcTypeEncoding:RDBlockInfoGetObjCSignature(blockInfo)];
+        _signature = [RDMethodSignature signatureWithObjcTypeEncoding:RDBlockInfoGetObjcSignature(blockInfo)];
         _kind = RDBlockInfoGetKind(blockInfo);
     }
     return self;

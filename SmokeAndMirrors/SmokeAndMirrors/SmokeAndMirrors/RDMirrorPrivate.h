@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RDProperty()
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithObjCProperty:(Property)property inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjcProperty:(Property)property inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -58,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readwrite) RDRetentionType retention;
 
 - (instancetype)initWithSmoke:(RDSmoke *)smoke NS_UNAVAILABLE;
-- (instancetype)initWithObjCIvar:(Ivar)ivar inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObjcIvar:(Ivar)ivar inSmoke:(RDSmoke *)smoke NS_DESIGNATED_INITIALIZER;
 
 @end
 

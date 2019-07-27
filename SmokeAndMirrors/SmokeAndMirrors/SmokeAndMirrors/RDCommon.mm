@@ -17,7 +17,7 @@ RD_EXTERN RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo) {
         @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Incomprehensible block kind" userInfo:nil];
 }
 
-RD_EXTERN const char *RDBlockInfoGetObjCSignature(const RDBlockInfo *blockInfo) {
+RD_EXTERN const char *RDBlockInfoGetObjcSignature(const RDBlockInfo *blockInfo) {
     const char *signature = NULL;
 
     if (blockInfo->flags & RDBlockInfoFlagHasSignature) {
@@ -57,8 +57,8 @@ RD_EXTERN RDBlockKind RDBlockGetKind(id block) {
     return RDBlockInfoGetKind(RDGetBlockInfo(block));
 }
 
-RD_EXTERN const char *_Nullable RDBlockGetObjCSignature(id block) {
-    return RDBlockInfoGetObjCSignature(RDGetBlockInfo(block));
+RD_EXTERN const char *_Nullable RDBlockGetObjcSignature(id block) {
+    return RDBlockInfoGetObjcSignature(RDGetBlockInfo(block));
 }
 
 RD_EXTERN void (*RDBlockGetDisposeFunction(id block))(void *src) {

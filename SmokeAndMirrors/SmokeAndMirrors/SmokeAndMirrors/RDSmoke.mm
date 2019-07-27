@@ -136,7 +136,7 @@ RD_FINAL_CLASS
         return nil;
     
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithProperty:property] valueProducer:^RDMirror *{
-        return [[RDProperty alloc] initWithObjCProperty:property inSmoke:self];
+        return [[RDProperty alloc] initWithObjcProperty:property inSmoke:self];
     }];
 }
 
@@ -145,7 +145,7 @@ RD_FINAL_CLASS
         return nil;
     
     return [self mirrorForItem:[RDObjcOpaqueItem itemWithIvar:ivar] valueProducer:^__kindof RDMirror *{
-        return [[RDIvar alloc] initWithObjCIvar:ivar inSmoke:self];
+        return [[RDIvar alloc] initWithObjcIvar:ivar inSmoke:self];
     }];
 }
 
