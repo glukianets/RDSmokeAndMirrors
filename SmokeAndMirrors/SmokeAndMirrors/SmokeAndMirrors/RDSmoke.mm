@@ -356,7 +356,7 @@ RD_FINAL_CLASS
     if (block == nil)
         return nil;
     
-    RDBlockInfo *blockInfo = RDBlockInfoOfBlock(block);
+    RDBlockInfo *blockInfo = RDGetBlockInfo(block);
     RDMethodSignature *signature = [RDMethodSignature signatureWithObjcTypeEncoding:RDBlockInfoGetObjCSignature(blockInfo)];
     RDBlockKind kind = RDBlockInfoGetKind(blockInfo);
     
