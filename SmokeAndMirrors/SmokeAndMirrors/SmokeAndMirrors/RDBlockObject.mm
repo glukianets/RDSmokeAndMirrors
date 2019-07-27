@@ -1,6 +1,7 @@
 #import "RDBlockObject.h"
 #import "RDType.h"
 #import "RDPrivate.h"
+
 #import <objc/runtime.h>
 #import <ffi/ffi.h>
 
@@ -13,13 +14,6 @@ struct RDBlockObjectCapture {
     SEL selector;
     void *fptr;
 };
-
-@interface RDType(RDInvocation)
-
-- (ffi_type *_Nullable)_inv_ffi_type;
-+ (void)_inv_ffi_type_destroy:(ffi_type *)type;
-
-@end
 
 @implementation RDBlockObject {
     RDBlockInfoFlags _flags;
@@ -73,12 +67,12 @@ RDBlockObjectCapture *RDBlockObjectCaptureForSelectorInClass(SEL selector, Class
         ffi_type **argTypes = (ffi_type **)calloc(extArgCount, sizeof(ffi_type *));
 
         for (NSUInteger i = 0; i < extArgCount; ++i)
-            if (ffi_type *type = sig.arguments[i].type._inv_ffi_type; type != NULL)
+            if (ffi_type *type = sig.arguments[i].type._ffi_type; type != NULL)
                 argTypes[i] = type;
             else
                 return NULL;
 
-        ffi_type *retType = sig.returnValue.type._inv_ffi_type;
+        ffi_type *retType = sig.returnValue.type._ffi_type;
         if (retType == NULL)
             return NULL;
         

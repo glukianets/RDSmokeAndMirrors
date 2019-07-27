@@ -1,6 +1,7 @@
 #import "RDInvocation.h"
 #import "RDPrivate.h"
 #import "RDCommon.h"
+
 #import <ffi/ffi.h>
 
 NSErrorDomain const RDInvocationErrorDomain = @"RDInvocationErrorDomain";
@@ -13,15 +14,6 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 #define RDFFIError(STATUS) [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationFFIErrorCode userInfo:@{ @"ffi_prep_cif": @(STATUS) }]
 #define RDMethodResolutionError() [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationMethodResolutionErrorCode userInfo:nil]
 #define RDMethodTypeSafetyError() [NSError errorWithDomain:RDInvocationErrorDomain code:RDInvocationMethodTypeSafetyErrorCode userInfo:nil]
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDType(RDInvocation)
-
-- (ffi_type *_Nullable)_inv_ffi_type;
-+ (void)_inv_ffi_type_destroy:(ffi_type *)type;
-
-@end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 @interface RDInvocation()
@@ -39,7 +31,7 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
 
 - (void)dealloc {
     for (NSUInteger i = 0; i < _argCount; ++i)
-        [RDType _inv_ffi_type_destroy:*RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, i)];
+        [RDType _ffi_type_destroy:*RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, i)];
 }
 
 - (instancetype)initWithArguments:(RDValue *)arguments {
@@ -69,7 +61,7 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
         for (NSUInteger i = 2; i < count; ++i) {
             RDType *fieldType = nil;
             *RD_FLEX_ARRAY_ELEMENT(self, void *, count + i) = (void *)[arguments bufferAtIndex:i - 2 type:&fieldType];
-            *RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, i) = fieldType._inv_ffi_type;
+            *RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, i) = fieldType._ffi_type;
         }
     }
     return self;
@@ -101,10 +93,10 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
     if (retType == nil)
         return (void)(error != NULL && (*error = RDMethodTypeSafetyError())), nil;
 
-    ffi_type *retFFIType = retType._inv_ffi_type;
+    ffi_type *retFFIType = retType._ffi_type;
     if (retFFIType == NULL)
         return (void)(error != NULL && (*error = RDMethodTypeSafetyError())), nil;
-    RD_DEFER { [RDType _inv_ffi_type_destroy:retFFIType]; };
+    RD_DEFER { [RDType _ffi_type_destroy:retFFIType]; };
 
     ffi_type **argTypes = RD_FLEX_ARRAY_ELEMENT(self, ffi_type *, 0);
     if (ffi_status status = ffi_prep_cif(&_cif, FFI_DEFAULT_ABI, (unsigned)_argCount, retFFIType, argTypes); status != FFI_OK)
@@ -117,219 +109,6 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
     ffi_call(&_cif, method_getImplementation(method), [retValue bufferType:NULL], argValues);
     
     return (void)(error != NULL && (*error = nil)), retValue;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    return NULL;
-}
-
-+ (void)_inv_ffi_type_destroy:(ffi_type *)type {
-    if (type == NULL || type->type != FFI_TYPE_STRUCT)
-        return;
-    
-    ffi_type **elements = (ffi_type **)(type + 1);
-    while (*elements++ != NULL)
-        [self _inv_ffi_type_destroy:*elements];
-    
-    free(type);
-}
-
-@end
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDUnknownType(RDInvocation)
-@end
-
-@implementation RDUnknownType(RDInvocation)
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDVoidType(RDInvocation)
-@end
-
-@implementation RDVoidType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    return &ffi_type_void;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDObjectType(RDInvocation)
-@end
-
-@implementation RDObjectType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    return &ffi_type_pointer;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDPrimitiveType(RDInvocation)
-@end
-
-@implementation RDPrimitiveType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    switch (self.kind) {
-        case RDPrimitiveTypeKindSelector:
-        case RDPrimitiveTypeKindCString:
-        case RDPrimitiveTypeKindAtom:
-            return &ffi_type_pointer;
-
-        case RDPrimitiveTypeKindChar:
-            return &ffi_type_schar;
-
-        case RDPrimitiveTypeKindUnsignedChar:
-            return &ffi_type_uchar;
-
-        case RDPrimitiveTypeKindBool:
-            return NULL; //TODO: find closest bool representation
-
-        case RDPrimitiveTypeKindShort:
-            return &ffi_type_sshort;
-
-        case RDPrimitiveTypeKindUnsignedShort:
-            return &ffi_type_ushort;
-
-        case RDPrimitiveTypeKindInt:
-            return &ffi_type_sint;
-
-        case RDPrimitiveTypeKindUnsignedInt:
-            return &ffi_type_uint;
-
-        case RDPrimitiveTypeKindLong:
-            return &ffi_type_slong;
-
-        case RDPrimitiveTypeKindUnsignedLong:
-            return &ffi_type_ulong;
-
-        case RDPrimitiveTypeKindLongLong:
-            return &ffi_type_slong;
-
-        case RDPrimitiveTypeKindUnsignedLongLong:
-            return &ffi_type_ulong;
-
-        case RDPrimitiveTypeKindInt128:
-            return NULL;
-
-        case RDPrimitiveTypeKindUnsignedInt128:
-            return NULL;
-
-        case RDPrimitiveTypeKindFloat:
-            return &ffi_type_float;
-
-        case RDPrimitiveTypeKindDouble:
-            return &ffi_type_double;
-
-        case RDPrimitiveTypeKindLongDouble:
-            return &ffi_type_longdouble;
-    }
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDCompositeType(RDInvocation)
-@end
-
-@implementation RDCompositeType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    switch (self.kind) {
-        case RDCompositeTypeKindPointer:
-            return &ffi_type_pointer;
-
-        case RDCompositeTypeKindVector:
-            return NULL;
-
-        case RDCompositeTypeKindComplex:
-            if (RDPrimitiveType *type = RD_CAST(self.type, RDPrimitiveType); type != nil)
-                switch (type.kind) {
-                    case RDPrimitiveTypeKindFloat:
-                        return &ffi_type_complex_float;
-                    case RDPrimitiveTypeKindDouble:
-                        return &ffi_type_complex_double;
-                    case RDPrimitiveTypeKindLongDouble:
-                        return &ffi_type_complex_longdouble;
-                    default:
-                        return NULL;
-                }
-            else
-                return NULL;
-            
-        case RDCompositeTypeKindAtomic:
-            return NULL;
-
-        case RDCompositeTypeKindConst:
-            return self.type._inv_ffi_type;
-    }
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDBitfieldType(RDInvocation)
-@end
-
-@implementation RDBitfieldType(RDInvocation)
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDArrayType(RDInvocation)
-@end
-
-@implementation RDArrayType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    return &ffi_type_pointer;
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDAggregateType(RDInvocation)
-@end
-
-@implementation RDAggregateType(RDInvocation)
-
-- (ffi_type *)_inv_ffi_type {
-    switch (self.kind) {
-        case RDAggregateTypeKindUnion:
-            return NULL;
-        case RDAggregateTypeKindStruct:
-            ffi_type *types = (ffi_type *)calloc(1, sizeof(ffi_type) + sizeof(ffi_type *) * (self.count + 1));
-            types->type = FFI_TYPE_STRUCT;
-            types->size = 0;
-            types->alignment = 0;
-            types->elements = (ffi_type **)(types + 1);
-            
-            for (NSUInteger i = 0; i < self.count; ++i)
-                if (RDField *field = [self fieldAtIndex:i]; field != NULL)
-                    types->elements[i] = field->type._inv_ffi_type;
-            
-            types->elements[self.count] = NULL;
-            
-            return types;
-    }
 }
 
 @end

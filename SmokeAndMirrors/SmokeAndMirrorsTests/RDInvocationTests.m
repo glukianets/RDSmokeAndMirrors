@@ -101,22 +101,15 @@ const char *_Block_dump(id block);
 
 - (void)testBlockject {
     XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"invoke"];
-    NSLog(@"1)");
     void (^block)(id) = nil;
     RDInvocationDummy *dummy = [[RDInvocationDummy alloc] initWithExpectation:expectation];
-    NSLog(@"2)");
     block = (id)[dummy asBlock];
-    NSLog(@"3)");
-//    dummy = nil;
-    NSLog(@"4)");
+    dummy = nil;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        NSLog(@"a)");
         block(@"BATMAN!");
-        NSLog(@"b)");
     });
-    NSLog(@"5)");
     block = nil;
-    [self waitForExpectations:@[dummy.expectation] timeout:2];
+    [self waitForExpectations:@[expectation] timeout:2];
 }
 
 @end

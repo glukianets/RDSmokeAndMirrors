@@ -30,6 +30,12 @@
 		71D06DAB22C2B35000568CAE /* RDType.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DA922C2B35000568CAE /* RDType.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71D06DAC22C2B35000568CAE /* RDType.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71D06DAA22C2B35000568CAE /* RDType.mm */; };
 		71D06DAE22C2B4F500568CAE /* RDPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 71D06DAD22C2B4F500568CAE /* RDPrivate.h */; };
+		71EEE30422EC5F0C00CDC259 /* RDTypeTools.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE30222EC5F0C00CDC259 /* RDTypeTools.h */; };
+		71EEE30522EC5F0C00CDC259 /* RDTypeTools.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE30322EC5F0C00CDC259 /* RDTypeTools.mm */; };
+		71EEE30822EC6A7800CDC259 /* RDMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE30622EC68CF00CDC259 /* RDMacros.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		71EEE30E22EC714400CDC259 /* RDExternalDefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE30D22EC714400CDC259 /* RDExternalDefs.h */; };
+		71EEE31122EC719D00CDC259 /* RDUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE30F22EC719D00CDC259 /* RDUtils.h */; };
+		71EEE31222EC719D00CDC259 /* RDUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31022EC719D00CDC259 /* RDUtils.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +77,12 @@
 		71D06DA922C2B35000568CAE /* RDType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDType.h; sourceTree = "<group>"; };
 		71D06DAA22C2B35000568CAE /* RDType.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDType.mm; sourceTree = "<group>"; };
 		71D06DAD22C2B4F500568CAE /* RDPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDPrivate.h; sourceTree = "<group>"; };
+		71EEE30222EC5F0C00CDC259 /* RDTypeTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDTypeTools.h; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDTypeTools.h; sourceTree = "<group>"; };
+		71EEE30322EC5F0C00CDC259 /* RDTypeTools.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RDTypeTools.mm; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDTypeTools.mm; sourceTree = "<group>"; };
+		71EEE30622EC68CF00CDC259 /* RDMacros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDMacros.h; path = ../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/RDMacros.h; sourceTree = "<group>"; };
+		71EEE30D22EC714400CDC259 /* RDExternalDefs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDExternalDefs.h; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDExternalDefs.h; sourceTree = "<group>"; };
+		71EEE30F22EC719D00CDC259 /* RDUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDUtils.h; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDUtils.h; sourceTree = "<group>"; };
+		71EEE31022EC719D00CDC259 /* RDUtils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RDUtils.mm; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDUtils.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,10 +148,12 @@
 		7194C18922C25995001E9656 /* SmokeAndMirrors */ = {
 			isa = PBXGroup;
 			children = (
+				71EEE30122EC5ED300CDC259 /* Private */,
 				71D06DAD22C2B4F500568CAE /* RDPrivate.h */,
 				7174A4A622DB526E00EA0D70 /* RDPrivate.mm */,
 				71448D4722C835F00030669A /* RDCommon.h */,
 				71448D4822C835F00030669A /* RDCommon.mm */,
+				71EEE30622EC68CF00CDC259 /* RDMacros.h */,
 				7194C18A22C25A02001E9656 /* RDMirror.h */,
 				7194C18B22C25A02001E9656 /* RDMirror.mm */,
 				71D06DA722C26CAF00568CAE /* RDMirrorPrivate.h */,
@@ -167,6 +181,18 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		71EEE30122EC5ED300CDC259 /* Private */ = {
+			isa = PBXGroup;
+			children = (
+				71EEE30222EC5F0C00CDC259 /* RDTypeTools.h */,
+				71EEE30322EC5F0C00CDC259 /* RDTypeTools.mm */,
+				71EEE30D22EC714400CDC259 /* RDExternalDefs.h */,
+				71EEE30F22EC719D00CDC259 /* RDUtils.h */,
+				71EEE31022EC719D00CDC259 /* RDUtils.mm */,
+			);
+			path = Private;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -180,10 +206,14 @@
 				71D06DAB22C2B35000568CAE /* RDType.h in Headers */,
 				7194C18022C2564E001E9656 /* SmokeAndMirrors.h in Headers */,
 				71D06DAE22C2B4F500568CAE /* RDPrivate.h in Headers */,
+				71EEE31122EC719D00CDC259 /* RDUtils.h in Headers */,
+				71EEE30422EC5F0C00CDC259 /* RDTypeTools.h in Headers */,
+				71EEE30822EC6A7800CDC259 /* RDMacros.h in Headers */,
 				7194C18C22C25A02001E9656 /* RDMirror.h in Headers */,
 				71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */,
 				71B4323822D0E8380046463D /* RDInvocation.h in Headers */,
 				71448D4922C835F00030669A /* RDCommon.h in Headers */,
+				71EEE30E22EC714400CDC259 /* RDExternalDefs.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,6 +314,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71EEE30522EC5F0C00CDC259 /* RDTypeTools.mm in Sources */,
 				71448D4A22C835F00030669A /* RDCommon.mm in Sources */,
 				7194C18D22C25A02001E9656 /* RDMirror.mm in Sources */,
 				71D06DAC22C2B35000568CAE /* RDType.mm in Sources */,
@@ -292,6 +323,7 @@
 				71448D3322C823120030669A /* RDValue.mm in Sources */,
 				71B4323922D0E8380046463D /* RDInvocation.mm in Sources */,
 				7174A4A722DB526E00EA0D70 /* RDPrivate.mm in Sources */,
+				71EEE31222EC719D00CDC259 /* RDUtils.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
