@@ -126,6 +126,7 @@ typedef NS_ENUM(NSUInteger, RDRetentionType) {
 
 @interface RDBlock : RDClass
 
+@property (nonatomic, readonly) RDBlockKind kind;
 @property (nonatomic, readonly, nullable) RDMethodSignature *signature;
 
 @end

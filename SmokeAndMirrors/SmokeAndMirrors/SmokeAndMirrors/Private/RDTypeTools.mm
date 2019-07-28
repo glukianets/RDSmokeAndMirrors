@@ -80,16 +80,19 @@
 }
 
 - (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
-    if (NSString *description = [(__bridge id)*(void **)bytes description]; description != nil)
-        [info addObject:[NSString stringWithFormat:@"Printing description of (%@)%p:\n%@", self.description, *(void **)bytes, description]];
-
     if (void *ptr = *(void **)bytes; ptr != NULL)
         switch (self.kind) {
         case RDObjectTypeKindGeneric:
-        case RDObjectTypeKindBlock:
+        case RDObjectTypeKindBlock: {
+            id object = (__bridge id)*(void **)bytes;
+            if (NSString *description = [object description]; description != nil)
+                [info addObject:[NSString stringWithFormat:@"Printing description of (%@)%p:\n%@", self.description, object, description]];
             return [NSString stringWithFormat:@"(%@)%p", self.description, ptr];
-        case RDObjectTypeKindClass:
-            return [NSString stringWithFormat:@"%@.self", NSStringFromClass(*(Class *)bytes)];
+        }
+        case RDObjectTypeKindClass: {
+            __unsafe_unretained Class cls = object_getClass((__bridge id)bytes); // Much tagged isa, such hack, wow
+            return [NSString stringWithFormat:@"%@.self", NSStringFromClass(cls)];
+        }
         }
     else
         return @"nil";
@@ -365,6 +368,5 @@
 }
 
 @end
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -36,8 +36,9 @@
 		71EEE30E22EC714400CDC259 /* RDExternalDefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE30D22EC714400CDC259 /* RDExternalDefs.h */; };
 		71EEE31122EC719D00CDC259 /* RDUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE30F22EC719D00CDC259 /* RDUtils.h */; };
 		71EEE31222EC719D00CDC259 /* RDUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31022EC719D00CDC259 /* RDUtils.mm */; };
-		71EEE31522ECE62F00CDC259 /* RDReflection.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE31322ECE62F00CDC259 /* RDReflection.h */; };
+		71EEE31522ECE62F00CDC259 /* RDReflection.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE31322ECE62F00CDC259 /* RDReflection.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71EEE31622ECE62F00CDC259 /* RDReflection.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31422ECE62F00CDC259 /* RDReflection.mm */; };
+		71EEE31822ED173900CDC259 /* RDReflectionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31722ED173900CDC259 /* RDReflectionTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,14 +80,15 @@
 		71D06DA922C2B35000568CAE /* RDType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDType.h; sourceTree = "<group>"; };
 		71D06DAA22C2B35000568CAE /* RDType.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDType.mm; sourceTree = "<group>"; };
 		71D06DAD22C2B4F500568CAE /* RDPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDPrivate.h; sourceTree = "<group>"; };
-		71EEE30222EC5F0C00CDC259 /* RDTypeTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDTypeTools.h; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDTypeTools.h; sourceTree = "<group>"; };
-		71EEE30322EC5F0C00CDC259 /* RDTypeTools.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RDTypeTools.mm; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDTypeTools.mm; sourceTree = "<group>"; };
-		71EEE30622EC68CF00CDC259 /* RDMacros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDMacros.h; path = ../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/RDMacros.h; sourceTree = "<group>"; };
-		71EEE30D22EC714400CDC259 /* RDExternalDefs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDExternalDefs.h; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDExternalDefs.h; sourceTree = "<group>"; };
-		71EEE30F22EC719D00CDC259 /* RDUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDUtils.h; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDUtils.h; sourceTree = "<group>"; };
-		71EEE31022EC719D00CDC259 /* RDUtils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RDUtils.mm; path = ../../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/Private/RDUtils.mm; sourceTree = "<group>"; };
-		71EEE31322ECE62F00CDC259 /* RDReflection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RDReflection.h; path = ../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/RDReflection.h; sourceTree = "<group>"; };
-		71EEE31422ECE62F00CDC259 /* RDReflection.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RDReflection.mm; path = ../../../../../../../System/Volumes/Data/Users/rd/P/RDSmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/SmokeAndMirrors/RDReflection.mm; sourceTree = "<group>"; };
+		71EEE30222EC5F0C00CDC259 /* RDTypeTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDTypeTools.h; sourceTree = "<group>"; };
+		71EEE30322EC5F0C00CDC259 /* RDTypeTools.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDTypeTools.mm; sourceTree = "<group>"; };
+		71EEE30622EC68CF00CDC259 /* RDMacros.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDMacros.h; sourceTree = "<group>"; };
+		71EEE30D22EC714400CDC259 /* RDExternalDefs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDExternalDefs.h; sourceTree = "<group>"; };
+		71EEE30F22EC719D00CDC259 /* RDUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDUtils.h; sourceTree = "<group>"; };
+		71EEE31022EC719D00CDC259 /* RDUtils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDUtils.mm; sourceTree = "<group>"; };
+		71EEE31322ECE62F00CDC259 /* RDReflection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDReflection.h; sourceTree = "<group>"; };
+		71EEE31422ECE62F00CDC259 /* RDReflection.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDReflection.mm; sourceTree = "<group>"; };
+		71EEE31722ED173900CDC259 /* RDReflectionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDReflectionTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				7194C17D22C2564E001E9656 /* SmokeAndMirrorsTests.m */,
+				71EEE31722ED173900CDC259 /* RDReflectionTests.m */,
 				7142E3CF22E528FB00F69F0C /* RDInvocationTests.m */,
 				71CEE7CD22E5364D001269D8 /* RDValueTests.m */,
 				7194C17F22C2564E001E9656 /* Info.plist */,
@@ -341,6 +344,7 @@
 			files = (
 				7194C17E22C2564E001E9656 /* SmokeAndMirrorsTests.m in Sources */,
 				7142E3D022E528FB00F69F0C /* RDInvocationTests.m in Sources */,
+				71EEE31822ED173900CDC259 /* RDReflectionTests.m in Sources */,
 				71CEE7CE22E5364D001269D8 /* RDValueTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

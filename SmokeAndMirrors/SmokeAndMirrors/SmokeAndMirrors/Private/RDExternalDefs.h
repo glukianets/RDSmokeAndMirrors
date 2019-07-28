@@ -21,4 +21,11 @@ RD_EXTERN id _Nullable objc_retainBlock(id _Nullable value);
 RD_EXTERN void objc_storeStrong(id _Nullable *_Nonnull object, id _Nullable value);
 RD_EXTERN id objc_storeWeak(id _Nullable *_Nonnull object, id _Nullable value);
 
+BLOCK_EXPORT void *_Nonnull _NSConcreteStackBlock[32];          // likely __NSStackBlock__
+BLOCK_EXPORT void *_Nonnull _NSConcreteMallocBlock[32];         // likely __NSMallocBlock__
+BLOCK_EXPORT void *_Nonnull _NSConcreteAutoBlock[32];           // likely __NSAutoBlock__
+BLOCK_EXPORT void *_Nonnull _NSConcreteFinalizingBlock[32];     // likely __NSFinalizingBlock__
+BLOCK_EXPORT void *_Nonnull _NSConcreteGlobalBlock[32];         // likely __NSGlobalBlock__
+BLOCK_EXPORT void *_Nonnull _NSConcreteWeakBlockVariable[32];   // likely __NSBlockVariable__
+
 NS_ASSUME_NONNULL_END

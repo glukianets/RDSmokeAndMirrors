@@ -1,6 +1,25 @@
 #import "RDCommon.h"
+#import "RDPrivate.h"
 
 RD_EXTERN RDBlockInfoFlags const RDBlockInfoFlagsRefCountMask = (RDBlockInfoFlags)0xffff;
+
+RD_EXTERN BOOL RDIsBlock(id object) {
+    static void *blockClasses[] = {
+        _NSConcreteStackBlock,
+        _NSConcreteMallocBlock,
+        _NSConcreteAutoBlock,
+        _NSConcreteFinalizingBlock,
+        _NSConcreteGlobalBlock,
+        _NSConcreteWeakBlockVariable,
+    };
+    __unsafe_unretained Class cls = object_getClass(object);
+
+    for (void *blockClass : blockClasses)
+        if (cls == blockClass)
+            return YES;
+    
+    return NO;
+}
 
 RD_EXTERN RDBlockInfo *RDGetBlockInfo(id block) {
     return(__bridge RDBlockInfo *)block;

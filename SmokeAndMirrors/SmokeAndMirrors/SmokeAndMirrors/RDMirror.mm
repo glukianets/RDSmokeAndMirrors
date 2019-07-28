@@ -325,6 +325,8 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
     self = [super initWithSmoke:smoke];
     if (self) {
+        _protocol = protocol;
+        
         _name = ({
             const char *name = protocol_getName(protocol);
             name == NULL ? nil : [NSString stringWithUTF8String:name];
@@ -424,6 +426,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 - (instancetype)initWithObjcMethod:(Method)method inSmoke:(RDSmoke *)smoke {
     self = [super initWithSmoke:smoke];
     if (self) {
+        _method = method;
         _selector = method_getName(method);
         _signature = ({
             RDMethodSignature *signature = [RDMethodSignature signatureWithObjcTypeEncoding:method_getTypeEncoding(method)];
@@ -528,9 +531,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface RDBlock()
-
-@property (nonatomic, readonly) RDBlockKind kind;
-
+@property (nonatomic, readonly) RDBlockDescriptor *descriptor;
 @end
 
 @implementation RDBlock
@@ -550,6 +551,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
                               ivars:prototype.ivars
                          properties:prototype.properties];
     if (self) {
+        _descriptor = blockInfo->descriptor;
         _signature = [RDMethodSignature signatureWithObjcTypeEncoding:RDBlockInfoGetObjcSignature(blockInfo)];
         _kind = RDBlockInfoGetKind(blockInfo);
     }
@@ -579,12 +581,9 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 NSString *blockString(NSString *name, RDMethodSignature *signature) {
     NSString *returnType = signature.returnValue.description ?: @"";
-    NSString *body = ({
-        NSString *arguments = [map_nn(signature.arguments, ^NSString *(RDMethodArgument *arg) {
-            return arg.description ?: nil;
-        }) componentsJoinedByString:@", "];
-        [NSString stringWithFormat:@"(%@)", arguments];
-    });
+    NSString *body = [NSString stringWithFormat:@"(%@)", [map_nn(signature.arguments, ^NSString *(RDMethodArgument *arg) {
+        return arg.description;
+    }) componentsJoinedByString:@", "]];
     return [NSString stringWithFormat:@"^%@%@;", returnType, body];
 }
 

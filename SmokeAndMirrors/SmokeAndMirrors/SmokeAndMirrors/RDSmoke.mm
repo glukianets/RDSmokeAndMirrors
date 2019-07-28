@@ -82,6 +82,16 @@ RD_FINAL_CLASS
 
 @implementation RDSmoke
 
++ (RDSmoke *)currentThreadSmoke {
+    static NSString *const kSmokeThreadDictKey = @"RDSmoke";
+    RDSmoke *smoke = NSThread.currentThread.threadDictionary[kSmokeThreadDictKey];
+    if (smoke == nil) {
+        smoke = [RDSmoke new];
+        NSThread.currentThread.threadDictionary[kSmokeThreadDictKey] = smoke;
+    }
+    return smoke;
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {

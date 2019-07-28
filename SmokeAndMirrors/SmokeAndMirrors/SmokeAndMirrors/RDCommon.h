@@ -40,6 +40,7 @@ typedef NS_ENUM(NSUInteger, RDBlockKind) {
 
 RD_EXTERN RDBlockInfoFlags const RDBlockInfoFlagsRefCountMask;
 
+RD_EXTERN BOOL RDIsBlock(id object);
 RD_EXTERN RDBlockInfo *RDGetBlockInfo(id block);
 
 RD_EXTERN RDBlockKind RDBlockInfoGetKind(const RDBlockInfo *blockInfo);

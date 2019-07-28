@@ -6,6 +6,8 @@ NS_ASSUME_NONNULL_BEGIN
 RD_FINAL_CLASS
 @interface RDSmoke : NSObject
 
+@property (nonatomic, readonly, class) RDSmoke *currentThreadSmoke;
+
 - (RDClass *)mirrorForObjcClass:(Class)cls;
 - (RDProtocol *)mirrorForObjcProtocol:(Protocol *)protocol;
 - (RDMethod *)mirrorForObjcMethod:(Method)method;
