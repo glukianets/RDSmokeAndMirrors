@@ -38,6 +38,10 @@
     free(type);
 }
 
+- (RDRetentionType)_defaultRetention {
+    return RDRetentionTypeUnsafeUnretained;
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -100,6 +104,16 @@
 
 - (ffi_type *)_ffi_type {
     return &ffi_type_pointer;
+}
+
+- (RDRetentionType)_defaultRetention {
+    switch (self.kind) {
+    case RDObjectTypeKindGeneric:
+    case RDObjectTypeKindBlock:
+        return RDRetentionTypeStrong;
+    case RDObjectTypeKindClass:
+        return RDRetentionTypeUnsafeUnretained;
+    }
 }
 
 @end

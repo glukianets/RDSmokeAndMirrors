@@ -9,7 +9,17 @@ NS_ASSUME_NONNULL_BEGIN
 #define RD_EXTERN extern
 #endif
 
+#ifndef __has_feature
+#define __has_feature(x) 0 // Compatibility with non-clang compilers.
+#endif
+
 #define RD_FINAL_CLASS __attribute__((objc_subclassing_restricted))
+
+#if __has_feature(attribute_ns_consumes_self)
+#define RD_CONSUMES_SELF __attribute__((ns_consumes_self))
+#else
+#define RD_CONSUMES_SELF
+#endif
 
 #define RD_RETURNS_RETAINED __attribute__((ns_returns_retained))
 #define RD_RETURNS_UNRETAINED __attribute__((ns_returns_not_retained))

@@ -20,7 +20,7 @@
 - (void)test {
     RDReflection *reflection = [[self.smoke mirrorForObjcClass:RDReflection.self] rd_reflect];
 //    RDReflection *reflection = [^{} rd_reflect];
-    NSLog(@"%@", reflection.debugDescription);
+//    NSLog(@"%@", reflection.debugDescription);
 }
 
 @end

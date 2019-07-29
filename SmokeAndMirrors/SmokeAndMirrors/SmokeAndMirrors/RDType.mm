@@ -858,6 +858,8 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
             return @"gc";
         case RDPropertyAttributeLegacyEncoding:
             return @"legacy";
+        case RDPropertyAttributeIvarName:
+            return [NSString stringWithFormat:@"ivar=%@", self.value];
     }
 }
 

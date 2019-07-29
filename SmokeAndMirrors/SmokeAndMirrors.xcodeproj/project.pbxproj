@@ -39,6 +39,9 @@
 		71EEE31522ECE62F00CDC259 /* RDReflection.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE31322ECE62F00CDC259 /* RDReflection.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		71EEE31622ECE62F00CDC259 /* RDReflection.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31422ECE62F00CDC259 /* RDReflection.mm */; };
 		71EEE31822ED173900CDC259 /* RDReflectionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31722ED173900CDC259 /* RDReflectionTests.m */; };
+		71EEE31B22ED999600CDC259 /* RDClassBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = 71EEE31922ED999600CDC259 /* RDClassBuilder.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		71EEE31C22ED999600CDC259 /* RDClassBuilder.mm in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31A22ED999600CDC259 /* RDClassBuilder.mm */; };
+		71EEE31E22EDA15100CDC259 /* RDClassBuilderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 71EEE31D22EDA15100CDC259 /* RDClassBuilderTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +92,9 @@
 		71EEE31322ECE62F00CDC259 /* RDReflection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDReflection.h; sourceTree = "<group>"; };
 		71EEE31422ECE62F00CDC259 /* RDReflection.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDReflection.mm; sourceTree = "<group>"; };
 		71EEE31722ED173900CDC259 /* RDReflectionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDReflectionTests.m; sourceTree = "<group>"; };
+		71EEE31922ED999600CDC259 /* RDClassBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RDClassBuilder.h; sourceTree = "<group>"; };
+		71EEE31A22ED999600CDC259 /* RDClassBuilder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = RDClassBuilder.mm; sourceTree = "<group>"; };
+		71EEE31D22EDA15100CDC259 /* RDClassBuilderTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RDClassBuilderTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +154,7 @@
 				7142E3CF22E528FB00F69F0C /* RDInvocationTests.m */,
 				71CEE7CD22E5364D001269D8 /* RDValueTests.m */,
 				7194C17F22C2564E001E9656 /* Info.plist */,
+				71EEE31D22EDA15100CDC259 /* RDClassBuilderTests.m */,
 			);
 			path = SmokeAndMirrorsTests;
 			sourceTree = "<group>";
@@ -176,6 +183,8 @@
 				71B4323722D0E8380046463D /* RDInvocation.mm */,
 				7174A4A222DB512200EA0D70 /* RDBlockObject.h */,
 				7174A4A322DB512200EA0D70 /* RDBlockObject.mm */,
+				71EEE31922ED999600CDC259 /* RDClassBuilder.h */,
+				71EEE31A22ED999600CDC259 /* RDClassBuilder.mm */,
 			);
 			path = SmokeAndMirrors;
 			sourceTree = "<group>";
@@ -218,6 +227,7 @@
 				71EEE31122EC719D00CDC259 /* RDUtils.h in Headers */,
 				71EEE30422EC5F0C00CDC259 /* RDTypeTools.h in Headers */,
 				71EEE30822EC6A7800CDC259 /* RDMacros.h in Headers */,
+				71EEE31B22ED999600CDC259 /* RDClassBuilder.h in Headers */,
 				7194C18C22C25A02001E9656 /* RDMirror.h in Headers */,
 				71D06DA822C26CAF00568CAE /* RDMirrorPrivate.h in Headers */,
 				71B4323822D0E8380046463D /* RDInvocation.h in Headers */,
@@ -334,6 +344,7 @@
 				71448D3322C823120030669A /* RDValue.mm in Sources */,
 				71B4323922D0E8380046463D /* RDInvocation.mm in Sources */,
 				7174A4A722DB526E00EA0D70 /* RDPrivate.mm in Sources */,
+				71EEE31C22ED999600CDC259 /* RDClassBuilder.mm in Sources */,
 				71EEE31222EC719D00CDC259 /* RDUtils.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -343,6 +354,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7194C17E22C2564E001E9656 /* SmokeAndMirrorsTests.m in Sources */,
+				71EEE31E22EDA15100CDC259 /* RDClassBuilderTests.m in Sources */,
 				7142E3D022E528FB00F69F0C /* RDInvocationTests.m in Sources */,
 				71EEE31822ED173900CDC259 /* RDReflectionTests.m in Sources */,
 				71CEE7CE22E5364D001269D8 /* RDValueTests.m in Sources */,

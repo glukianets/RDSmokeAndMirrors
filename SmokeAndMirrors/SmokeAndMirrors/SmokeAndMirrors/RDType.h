@@ -99,6 +99,7 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
     RDPropertyAttributeWeak                 = 'W',
     RDPropertyAttributeGarbageCollected     = 'P',
     RDPropertyAttributeLegacyEncoding       = 't',
+    RDPropertyAttributeIvarName             = 'V',
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

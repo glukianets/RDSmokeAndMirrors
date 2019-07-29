@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <RDType.h>
 #import <ffi/ffi.h>
+#import "RDMirror.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -12,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)_value_formatWithBytes:(void *)bytes;
 - (ffi_type *_Nullable)_ffi_type;
 + (void)_ffi_type_destroy:(ffi_type *)type;
+- (RDRetentionType)_defaultRetention;
 
 @end
 

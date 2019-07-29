@@ -108,9 +108,9 @@ typedef struct objc_method_description MethodDescription;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef NS_ENUM(NSUInteger, RDRetentionType) {
+    RDRetentionTypeUnsafeUnretained,
     RDRetentionTypeStrong,
     RDRetentionTypeWeak,
-    RDRetentionTypeUnsafeUnretained,
 };
 
 @interface RDIvar : RDMirror
