@@ -1,6 +1,16 @@
 #import "RDClassBuilder.h"
 #import "RDPrivate.h"
+#import "RDSmoke.h"
 #import <unordered_map>
+
+#define VALUE(VALUE) (void)(error != NULL && (*error = nil)), (VALUE)
+#define ERROR(VALUE, CODE) (void)(error != NULL && (*error = (CODE))), (VALUE)
+#define ECODE(VALUE, CODE) (void)(error != NULL && (*error = [NSError errorWithDomain:RDClassBuilderErrorDomain code:(CODE) userInfo:nil])), (VALUE)
+
+NSErrorDomain const RDClassBuilderErrorDomain = @"RDClassBuilderErrorDomain";
+NSInteger const RDClassBuilderInvalidNameCode = 257;
+NSInteger const RDClassBuilderInvalidArgumentCode = 258;
+NSInteger const RDClassBuilderReflectionErrorCode = 259;
 
 @interface RDCBIvar : NSObject
 @property (nonatomic, copy) NSString *name;
@@ -130,9 +140,9 @@
     _super = cls ?: NSObject.self;
 }
 
-- (Class)build {
+- (Class)buildNamed:(NSString *)name {
     NSError *error = nil;
-    __unsafe_unretained Class result = [self buildError:&error];
+    __unsafe_unretained Class result = [self buildNamed:name error:&error];
     if (result == nil || error != nil)
         @throw [NSException exceptionWithName:@"RDClassBuildingException"
                                        reason:error.description
@@ -141,8 +151,52 @@
         return result;
 }
 
-- (nullable Class)buildError:(NSError *_Nullable *_Nullable)error {
-    return nil;
+- (nullable Class)buildNamed:(NSString *)name error:(NSError *_Nullable *_Nullable)error {
+    if (name.length == 0)
+        return ECODE(Nil, RDClassBuilderInvalidNameCode);
+    
+    __unsafe_unretained Class cls = objc_allocateClassPair(self.superclass, name.UTF8String, 0);
+
+    if (NSError *err = nil; (void)[self _buildClass:cls error:&err], err == nil) {
+        objc_registerClassPair(cls);
+        return VALUE(cls);
+    } else {
+        objc_disposeClassPair(cls);
+        return ERROR(Nil, err);
+    }
+}
+
+- (void)buildUpon:(Class)cls {
+    NSError *error = nil;
+    [self buildUpon:cls error:&error];
+    if (cls == nil || error != nil)
+        @throw [NSException exceptionWithName:@"RDClassBuildingException"
+                                       reason:error.description
+                                     userInfo:error == nil ? nil : @{ NSUnderlyingErrorKey: error }];
+}
+
+- (void)buildUpon:(Class)cls error:(NSError *_Nullable *_Nullable)error {
+    [self _buildClass:cls error:error];
+}
+
+- (Class)_buildClass:(nullable Class)cls error:(NSError *_Nullable *_Nullable)error {
+    if (cls == Nil)
+        return ECODE(Nil, RDClassBuilderInvalidArgumentCode);
+    
+    RDSmoke *smoke = [RDSmoke currentThreadSmoke];
+    RDClass *mirror = [smoke mirrorForObjcClass:self.superclass];
+    if (mirror == nil)
+        return ECODE(Nil, RDClassBuilderReflectionErrorCode);
+    
+    for (RDIvar *ivar in self.ivars) {
+        RDType *type = ivar.type;
+        size_t size = type.size;
+        size_t alignment = type.alignment;
+        const char *encoding = type.objCTypeEncoding;
+        class_addIvar(cls, ivar.name.UTF8String, size, alignment, encoding);
+    }
+        
+    return VALUE(Nil);
 }
 
 @end

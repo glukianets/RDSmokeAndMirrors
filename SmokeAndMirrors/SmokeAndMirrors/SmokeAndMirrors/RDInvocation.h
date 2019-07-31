@@ -3,7 +3,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSErrorDomain const RDInvocationErrorDomain;
+RD_EXTERN NSErrorDomain const RDInvocationErrorDomain;
+RD_EXTERN NSInteger const RDInvocationFFIErrorCode;
+RD_EXTERN NSInteger const RDInvocationMethodResolutionErrorCode;
+RD_EXTERN NSInteger const RDInvocationMethodTypeSafetyErrorCode;
 
 RD_FINAL_CLASS
 @interface RDInvocation : NSObject

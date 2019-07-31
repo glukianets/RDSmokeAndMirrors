@@ -5,16 +5,18 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+RD_EXTERN NSErrorDomain const RDClassBuilderErrorDomain;
+
 @interface RDClassBuilder : NSObject
 
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, unsafe_unretained, null_resettable) Class super;
 
-+ (instancetype)buildNamed:(NSString *)name;
-- (instancetype)initWithName:(NSString *)name;
+- (nullable Class)buildNamed:(NSString *)name error:(NSError *_Nullable *_Nullable)error;
+- (Class)buildNamed:(NSString *)name;
 
-- (nullable Class)buildError:(NSError *_Nullable *_Nullable)error;
-- (Class)build;
+- (void)buildUpon:(Class)cls error:(NSError *_Nullable *_Nullable)error;
+- (void)buildUpon:(Class)cls;
 
 - (void)addIvarWithName:(NSString *)name type:(RDType *)type;
 - (void)addIvarWithName:(NSString *)name type:(RDType *)type retention:(RDRetentionType)retention;
