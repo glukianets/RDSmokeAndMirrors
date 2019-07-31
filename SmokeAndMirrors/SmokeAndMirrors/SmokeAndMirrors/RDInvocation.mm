@@ -89,7 +89,7 @@ NSInteger const RDInvocationMethodTypeSafetyErrorCode = 259;
     if (sig == nil)
         return (void)(error != NULL && (*error = RDMethodTypeSafetyError())), nil;
 
-    RDType *retType = sig.returnValue.type;
+    RDType *retType = sig.returnValue->type;
     if (retType == nil)
         return (void)(error != NULL && (*error = RDMethodTypeSafetyError())), nil;
 

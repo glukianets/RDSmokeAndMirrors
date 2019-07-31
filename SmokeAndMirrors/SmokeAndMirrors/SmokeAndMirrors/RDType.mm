@@ -744,62 +744,6 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@implementation RDMethodArgumentAttribute
-
-- (instancetype)initWithKind:(RDMethodArgumentAttributeKind)kind {
-    self = [super init];
-    if (self) {
-        _kind = kind;
-    }
-    return self;
-}
-
-- (NSString *)description {
-    switch (self.kind) {
-        case RDMethodArgumentAttributeKindConst:
-            return @"const";
-        case RDMethodArgumentAttributeKindIn:
-            return @"in";
-        case RDMethodArgumentAttributeKindOut:
-            return @"inout";
-        case RDMethodArgumentAttributeKindInOut:
-            return @"out";
-        case RDMethodArgumentAttributeKindByCopy:
-            return @"bycopy";
-        case RDMethodArgumentAttributeKindByRef:
-            return @"byref";
-        case RDMethodArgumentAttributeKindOneWay:
-            return @"oneway";
-        case RDMethodArgumentAttributeKindWTF:
-            return @"?";
-    }
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDMethodArgument
-
-- (instancetype)initWithType:(RDType *)type offset:(NSUInteger)offset attributes:(NSOrderedSet<RDMethodArgumentAttribute *> *)attributes {
-    self = [super init];
-    if (self) {
-        _type = type;
-        _offset = offset;
-        _attributes = attributes.copy;
-    }
-    return self;
-}
-
-- (NSString *)description {
-    NSString *attrs = self.attributes.count > 0 ? [[self.attributes.array componentsJoinedByString:@" "] stringByAppendingString:@" "] : @"";
-    return [NSString stringWithFormat:@"(%@%@)", attrs, self.type.description ?: @"?"];
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 @implementation RDMethodSignature
 
 + (instancetype)signatureWithObjcTypeEncoding:(const char *)encoding {
@@ -809,16 +753,24 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
         return nil;
 }
 
-- (instancetype)initWithArguments:(NSArray<RDMethodArgument *> *)arguments {
+- (instancetype)initWithReturnValue:(RDMethodArgument)retval arguments:(RDMethodArgument *)arguments count:(NSUInteger)count {
+    self = RD_FLEX_ARRAY_CREATE(self.class, RDMethodArgument, (count + 1));
     self = [super init];
     if (self) {
-        if (arguments.count < 2)
-            return nil;
-        
-        _returnValue = arguments.firstObject;
-        _arguments = [arguments subarrayWithRange:NSMakeRange(1, arguments.count - 1)];
+        _argumentsCount = count;
+        *RD_FLEX_ARRAY_ELEMENT(self, RDMethodArgument, _argumentsCount) = retval;
+        for (NSUInteger i = 0; i < count; ++i)
+            *RD_FLEX_ARRAY_ELEMENT(self, RDMethodArgument, i) = arguments[i];
     }
     return self;
+}
+
+- (RDMethodArgument *)argumentAtIndex:(NSUInteger)index {
+    return index < self.argumentsCount ? RD_FLEX_ARRAY_ELEMENT(self, RDMethodArgument, index) : NULL;
+}
+
+- (RDMethodArgument *)returnValue {
+    return RD_FLEX_ARRAY_ELEMENT(self, RDMethodArgument, self.argumentsCount);
 }
 
 @end
@@ -1071,44 +1023,79 @@ RDType *parseType(const char *_Nonnull *_Nonnull encoding) {
 }
 
 RDMethodSignature *parseMethodSignature(const char *_Nonnull *_Nonnull encoding) {
-    RDMethodArgument *(^parseMethodArgument)(const char *_Nonnull *_Nonnull) = ^RDMethodArgument *(const char *_Nonnull *_Nonnull encoding) {
-        NSMutableOrderedSet<RDMethodArgumentAttribute *> *attributes = [NSMutableOrderedSet orderedSet];
+    RDMethodArgument (^parseMethodArgument)(const char *_Nonnull *_Nonnull) = ^RDMethodArgument (const char *_Nonnull *_Nonnull encoding) {
+        RDMethodArgumentAttributes attributes = RDMethodArgumentAttributesNone;
         while (**encoding != '\0') {
             switch (**encoding) {
                 case RDMethodArgumentAttributeKindConst:
+                    attributes |= RDMethodArgumentAttributeConst;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindIn:
+                    attributes |= RDMethodArgumentAttributeIn;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindOut:
+                    attributes |= RDMethodArgumentAttributeOut;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindInOut:
+                    attributes |= RDMethodArgumentAttributeInOut;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindByCopy:
+                    attributes |= RDMethodArgumentAttributeByCopy;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindByRef:
+                    attributes |= RDMethodArgumentAttributeByRef;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindOneWay:
+                    attributes |= RDMethodArgumentAttributeOneWay;
+                    ++(*encoding);
+                    break;
                 case RDMethodArgumentAttributeKindWTF:
-                    [attributes addObject:[[RDMethodArgumentAttribute alloc] initWithKind:(RDMethodArgumentAttributeKind)*((*encoding)++)]];
+                    attributes |= RDMethodArgumentAttributeWTF;
+                    ++(*encoding);
                     break;
                 default:
                     if (**encoding >= '0' && **encoding <= '9')
-                        return [[RDMethodArgument alloc] initWithType:nil offset:parseNumber(encoding) attributes:attributes];
-                    
-                    RDType *type = parseType(encoding);
-                    if (type == nil)
-                        return nil;
-                    
-                    NSUInteger offset = parseNumber(encoding);
-                    return [[RDMethodArgument alloc] initWithType:type offset:offset attributes:attributes];
+                        return (RDMethodArgument) {
+                            .type=[RDUnknownType instance],
+                            .offset=(RDOffset)parseNumber(encoding),
+                            .attributes=attributes,
+                        };
+                    else
+                        return (RDMethodArgument) {
+                            .type=parseType(encoding),
+                            .offset=(RDOffset)parseNumber(encoding),
+                            .attributes=attributes
+                        };
             }
         }
-        return nil;
+        return (RDMethodArgument) {
+            .type=nil,
+            .offset=RDOffsetUnknown,
+            .attributes=RDMethodArgumentAttributesNone,
+        };
     };
     
-    NSMutableArray<RDMethodArgument *> *arguments = [NSMutableArray array];
+    std::vector<RDMethodArgument> arguments;
     while (**encoding != '\0')
-        if (RDMethodArgument *argument = parseMethodArgument(encoding); argument != nil)
-            [arguments addObject:argument];
+        if (RDMethodArgument argument = parseMethodArgument(encoding); argument.type != nil)
+            arguments.emplace_back(argument);
         else
             return nil;
     
-    return [[RDMethodSignature alloc] initWithArguments:arguments];
+    if (arguments.size() < 1)
+        return nil;
+    
+    return [[RDMethodSignature alloc] initWithReturnValue:arguments.at(0)
+                                                arguments:arguments.data() + 1
+                                                    count:arguments.size() - 1];
 }
+ 
 
 RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encoding) {
     RDPropertyAttribute *(^parseAttribute)(const char *_Nonnull *_Nonnull) = ^RDPropertyAttribute *(const char **encoding) {

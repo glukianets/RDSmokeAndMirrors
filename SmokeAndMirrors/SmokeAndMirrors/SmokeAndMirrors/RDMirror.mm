@@ -435,7 +435,7 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
                 if (*sel == ':')
                     ++argCount;
 
-            signature.arguments.count == argCount + 2 ? signature : nil;
+            signature.isMethodSignature ? signature : nil;
         });
     }
     return self;
@@ -579,30 +579,53 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+NSString *methodArgumentString(RDMethodArgument *argument) {
+    if (argument == nil)
+        return nil;
+    
+    NSMutableString *attributesString = [NSMutableString string];
+    if (argument->attributes & RDMethodArgumentAttributeConst)
+        [attributesString appendString:@"const "];
+    if (argument->attributes & RDMethodArgumentAttributeIn)
+        [attributesString appendString:@"in "];
+    if (argument->attributes & RDMethodArgumentAttributeOut)
+        [attributesString appendString:@"out "];
+    if (argument->attributes & RDMethodArgumentAttributeInOut)
+        [attributesString appendString:@"inout "];
+    if (argument->attributes & RDMethodArgumentAttributeByCopy)
+        [attributesString appendString:@"bycopy "];
+    if (argument->attributes & RDMethodArgumentAttributeByRef)
+        [attributesString appendString:@"byref "];
+    if (argument->attributes & RDMethodArgumentAttributeOneWay)
+        [attributesString appendString:@"oneway "];
+    
+    return [NSString stringWithFormat:@"(%@%@)", attributesString, argument->type.description ?: @"?"];
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 NSString *blockString(NSString *name, RDMethodSignature *signature) {
-    NSString *returnType = signature.returnValue.description ?: @"";
-    NSString *body = [NSString stringWithFormat:@"(%@)", [map_nn(signature.arguments, ^NSString *(RDMethodArgument *arg) {
-        return arg.description;
-    }) componentsJoinedByString:@", "]];
-    return [NSString stringWithFormat:@"^%@%@;", returnType, body];
+    NSString *returnType = methodArgumentString(signature.returnValue);
+    NSMutableArray<NSString *> *arguments = [NSMutableArray array];
+    for (NSUInteger i = 0; i < signature.argumentsCount; ++i)
+        [arguments addObject:methodArgumentString([signature argumentAtIndex:i]) ?: @""];
+    return [NSString stringWithFormat:@"^%@(%@);", returnType, [arguments componentsJoinedByString:@", "]];
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstanceLevel) {
-    NSString *returnType = signature.returnValue.description ?: @"()";
+    NSString *returnType = methodArgumentString(signature.returnValue) ?: @"()";
     NSString *body = ({
-        NSString *body;
+        NSMutableString *body = [NSMutableString string];
         NSArray<NSString *> *nameParts = [[NSString stringWithUTF8String:sel_getName(selector)] componentsSeparatedByString:@":"];
-        if (nameParts.count == 1) {
-            body = nameParts.firstObject;
-        } else {
-            NSArray<RDMethodArgument *> *arguments = [signature.arguments subarrayWithRange:NSMakeRange(2, signature.arguments.count - 2)];
-            body = [zip(^NSString *(NSString *name, RDMethodArgument *argument) {
-                NSString *argdesc = argument.description ?: @"";
-                return [name stringByAppendingFormat:@":%@arg%d", argdesc, 1];
-            }, nameParts, arguments) componentsJoinedByString:@" "];
-        }
+        
+        for (NSUInteger i = 0; i < MAX(nameParts.count, signature.argumentsCount); ++i)
+            [body appendFormat:@" %@:%@arg%zu",
+             (i < nameParts.count ? nameParts[i] : @""),
+             methodArgumentString([signature argumentAtIndex:i]) ?: @"",
+             i];
+        
         body;
     });
     return [NSString stringWithFormat:@"%c %@%@;", isInstanceLevel ? '-' : '+' , returnType, body];

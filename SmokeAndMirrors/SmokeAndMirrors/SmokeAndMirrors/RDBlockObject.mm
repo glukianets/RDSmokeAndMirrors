@@ -62,17 +62,17 @@ RDBlockObjectCapture *RDBlockObjectCaptureForSelectorInClass(SEL selector, Class
     if (sig == nil)
         return NULL;
 
-    NSUInteger extArgCount = sig.arguments.count;
+    NSUInteger extArgCount = sig.argumentsCount;
     {
         ffi_type **argTypes = (ffi_type **)calloc(extArgCount, sizeof(ffi_type *));
 
         for (NSUInteger i = 0; i < extArgCount; ++i)
-            if (ffi_type *type = sig.arguments[i].type._ffi_type; type != NULL)
+            if (ffi_type *type = [sig argumentAtIndex:i]->type._ffi_type; type != NULL)
                 argTypes[i] = type;
             else
                 return NULL;
 
-        ffi_type *retType = sig.returnValue.type._ffi_type;
+        ffi_type *retType = sig.returnValue->type._ffi_type;
         if (retType == NULL)
             return NULL;
         
@@ -130,6 +130,10 @@ RDBlockObjectCapture *RDBlockObjectCaptureForSelectorInClass(SEL selector, Class
 }
 
 - (instancetype)init {
+    RDBlockObjectCapture *capture = (__bridge RDBlockObjectCapture *)objc_getAssociatedObject(self.class, kBlockCaptureAssocKey);
+    if (capture == NULL)
+        return nil;
+
     self = [super init];
     if (self) {
         if (class_getInstanceSize(class_getSuperclass(RDBlockObject.self)) != sizeof(id)
@@ -138,8 +142,6 @@ RDBlockObjectCapture *RDBlockObjectCaptureForSelectorInClass(SEL selector, Class
             || (uintptr_t)&_invoke - (uintptr_t)self != offsetof(RDBlockInfo, invoke)
             || (uintptr_t)&_descriptor - (uintptr_t)self != offsetof(RDBlockInfo, descriptor))
             return nil; // layout compromized
-
-        RDBlockObjectCapture *capture = (__bridge RDBlockObjectCapture *)objc_getAssociatedObject(self.class, kBlockCaptureAssocKey);
 
         _flags = (RDBlockInfoFlags)(RDBlockInfoFlagHasCopyDispose | RDBlockInfoFlagNeedsFreeing);
         _invoke = (void (*)(id, ...))capture->fptr;

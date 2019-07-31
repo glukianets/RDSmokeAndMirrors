@@ -86,6 +86,19 @@ typedef NS_ENUM(char, RDMethodArgumentAttributeKind) {
     RDMethodArgumentAttributeKindWTF        = '!',
 };
 
+typedef NS_OPTIONS(NSUInteger, RDMethodArgumentAttributes) {
+    RDMethodArgumentAttributeConst      = (1 << 0),
+    RDMethodArgumentAttributeIn         = (1 << 1),
+    RDMethodArgumentAttributeOut        = (1 << 2),
+    RDMethodArgumentAttributeInOut      = (1 << 3),
+    RDMethodArgumentAttributeByCopy     = (1 << 4),
+    RDMethodArgumentAttributeByRef      = (1 << 5),
+    RDMethodArgumentAttributeOneWay     = (1 << 6),
+    RDMethodArgumentAttributeWTF        = (1 << 7),
+};
+
+static RDMethodArgumentAttributes RDMethodArgumentAttributesNone = 0;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef NS_ENUM(char, RDPropertyAttributeKind) {
@@ -195,25 +208,20 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDMethodArgumentAttribute : NSObject
-@property (nonatomic, readonly) RDMethodArgumentAttributeKind kind;
-@end
+typedef struct {
+    RDType *type;
+    RDOffset offset;
+    RDMethodArgumentAttributes attributes;
+} RDMethodArgument;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface RDMethodArgument : NSObject
-@property (nonatomic, readonly, nullable) RDType *type;
-@property (nonatomic, readonly) NSUInteger offset;
-@property (nonatomic, readonly) NSOrderedSet<RDMethodArgumentAttribute *> *attributes;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+RD_FINAL_CLASS
 @interface RDMethodSignature : NSObject
-@property (nonatomic, readonly) NSArray<RDMethodArgument *> *arguments;
+@property (nonatomic, readonly) NSUInteger argumentsCount;
 @property (nonatomic, readonly) RDMethodArgument *returnValue;
+@property (nonatomic, readonly) BOOL isMethodSignature;
 
 + (nullable instancetype)signatureWithObjcTypeEncoding:(const char *)types;
+- (RDMethodArgument *)argumentAtIndex:(NSUInteger)index;
 
 @end
 
