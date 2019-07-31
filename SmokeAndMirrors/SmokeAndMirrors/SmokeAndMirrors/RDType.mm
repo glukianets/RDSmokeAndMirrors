@@ -777,49 +777,11 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@implementation RDPropertyAttribute
+static NSUInteger const RDPropertyAttributeKindCount = 11;
 
-- (instancetype)initWithKind:(RDPropertyAttributeKind)kind value:(NSString *)value {
-    self = [super init];
-    if (self) {
-        _kind = kind;
-        _value = value.copy;
-    }
-    return self;
+@implementation RDPropertySignature {
+    RDPropertyAttribute _attributes[RDPropertyAttributeKindCount];
 }
-
-- (NSString *)description {
-    switch (self.kind) {
-        case RDPropertyAttributeReadOnly:
-            return @"readonly";
-        case RDPropertyAttributeCopy:
-            return @"copy";
-        case RDPropertyAttributeRetain:
-            return @"retain";
-        case RDPropertyAttributeNonatomic:
-            return @"nonatomic";
-        case RDPropertyAttributeGetter:
-            return [NSString stringWithFormat:@"getter=%@", self.value];
-        case RDPropertyAttributeSetter:
-            return [NSString stringWithFormat:@"setter=%@", self.value];
-        case RDPropertyAttributeDynamic:
-            return @"dynamic";
-        case RDPropertyAttributeWeak:
-            return @"weak";
-        case RDPropertyAttributeGarbageCollected:
-            return @"gc";
-        case RDPropertyAttributeLegacyEncoding:
-            return @"legacy";
-        case RDPropertyAttributeIvarName:
-            return [NSString stringWithFormat:@"ivar=%@", self.value];
-    }
-}
-
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@implementation RDPropertySignature
 
 + (instancetype)signatureWithObjcTypeEncoding:(const char *)encoding {
     if (encoding != nil && *encoding != '\0')
@@ -828,14 +790,23 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
         return nil;
 }
 
-- (instancetype)initWithName:(NSString *)name type:(RDType *)type attributes:(NSArray<RDPropertyAttribute *> *)attributes {
+- (instancetype)initWithType:(RDType *)type attributes:(RDPropertyAttribute *)attributes count:(NSUInteger)count {
     self = [super init];
     if (self) {
-        _ivarName = name.copy;
         _type = type;
-        _attributes = attributes.copy;
+        for (NSUInteger i = 0; i < count; ++i)
+            if (NSUInteger index = [RDAllPropertyAttributeKinds() indexOfObject:@(attributes[i].kind)]; index != NSNotFound)
+                _attributes[index] = attributes[i];
     }
     return self;
+}
+
+- (RDPropertyAttribute *)attributeWithKind:(RDPropertyAttributeKind)kind {
+    if (NSUInteger index = [RDAllPropertyAttributeKinds() indexOfObject:@(kind)]; index != NSNotFound)
+        if (RDPropertyAttribute *attribute = &_attributes[index]; attribute->kind != 0)
+            return attribute;
+
+    return NULL;
 }
 
 @end
@@ -1098,31 +1069,29 @@ RDMethodSignature *parseMethodSignature(const char *_Nonnull *_Nonnull encoding)
  
 
 RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encoding) {
-    RDPropertyAttribute *(^parseAttribute)(const char *_Nonnull *_Nonnull) = ^RDPropertyAttribute *(const char **encoding) {
+    RDPropertyAttribute (^parseAttribute)(const char *_Nonnull *_Nonnull) = ^RDPropertyAttribute (const char **encoding) {
         if (**encoding == '\0')
-            return nil;
-        
+            return (RDPropertyAttribute) {.kind=(RDPropertyAttributeKind)0, .value=nil};
+
         char c = *((*encoding)++);
         
         switch (c) {
-            case RDPropertyAttributeReadOnly:
-            case RDPropertyAttributeCopy:
-            case RDPropertyAttributeRetain:
-            case RDPropertyAttributeNonatomic:
-            case RDPropertyAttributeDynamic:
-            case RDPropertyAttributeWeak:
-            case RDPropertyAttributeGarbageCollected:
-                return [[RDPropertyAttribute alloc] initWithKind:(RDPropertyAttributeKind)c
-                                                           value:nil];
+            case RDPropertyAttributeKindReadOnly:
+            case RDPropertyAttributeKindCopy:
+            case RDPropertyAttributeKindRetain:
+            case RDPropertyAttributeKindNonatomic:
+            case RDPropertyAttributeKindDynamic:
+            case RDPropertyAttributeKindWeak:
+            case RDPropertyAttributeKindGarbageCollected:
+                return (RDPropertyAttribute) {.kind=(RDPropertyAttributeKind)c, .value=nil};
                 
-            case RDPropertyAttributeLegacyEncoding:
-            case RDPropertyAttributeGetter:
-            case RDPropertyAttributeSetter:
-                return [[RDPropertyAttribute alloc] initWithKind:(RDPropertyAttributeKind)c
-                                                           value:parseString(encoding, ',')];
+            case RDPropertyAttributeKindLegacyEncoding:
+            case RDPropertyAttributeKindGetter:
+            case RDPropertyAttributeKindSetter:
+                return (RDPropertyAttribute) {.kind=(RDPropertyAttributeKind)c, .value=parseString(encoding, ',')};
                 
             default:
-                return nil;
+                return (RDPropertyAttribute) {.kind=(RDPropertyAttributeKind)0, .value=nil};
         }
     };
     
@@ -1133,17 +1102,34 @@ RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encod
     if (type == nil && **encoding != ',')
         return nil;
     
-    NSMutableArray<RDPropertyAttribute *> *attributes = [NSMutableArray array];
+    std::vector<RDPropertyAttribute> attributes;
     NSString *name = nil;
     while (**encoding != '\0')
         if (*((*encoding)++) != ',')
             return nil;
         else if (**encoding == 'V' && ++(*encoding))
             name = parseString(encoding, '\0');
-        else if(RDPropertyAttribute *attribute = parseAttribute(encoding); attribute != nil)
-            [attributes addObject:attribute];
+        else if(RDPropertyAttribute attribute = parseAttribute(encoding); attribute.kind != 0)
+            attributes.emplace_back(attribute);
         else
             return nil;
     
-    return [[RDPropertySignature alloc] initWithName:name type:type attributes:attributes];
+    return [[RDPropertySignature alloc] initWithType:type attributes:attributes.data() count:attributes.size()];
+}
+
+NSArray<NSNumber *> *RDAllPropertyAttributeKinds(void) {
+    static NSArray<NSNumber *> *array = @[
+        @(RDPropertyAttributeKindReadOnly),
+        @(RDPropertyAttributeKindCopy),
+        @(RDPropertyAttributeKindRetain),
+        @(RDPropertyAttributeKindNonatomic),
+        @(RDPropertyAttributeKindGetter),
+        @(RDPropertyAttributeKindSetter),
+        @(RDPropertyAttributeKindDynamic),
+        @(RDPropertyAttributeKindWeak),
+        @(RDPropertyAttributeKindGarbageCollected),
+        @(RDPropertyAttributeKindLegacyEncoding),
+        @(RDPropertyAttributeKindIvarName),
+    ];
+    return array;
 }

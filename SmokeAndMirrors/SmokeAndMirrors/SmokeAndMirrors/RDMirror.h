@@ -72,7 +72,7 @@ typedef struct objc_method_description MethodDescription;
 
 @property (nonatomic, readonly) NSString *name;
 @property (nonatomic, readonly) RDType *type;
-@property (nonatomic, readonly) NSArray<RDPropertyAttribute *> *attributes;
+@property (nonatomic, readonly) RDPropertySignature *signature;
 
 @end
 

@@ -34,7 +34,7 @@ NSInteger const RDClassBuilderReflectionErrorCode = 259;
 @interface RDCBProperty : NSObject
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) RDType *type;
-@property (nonatomic, copy) NSArray<RDPropertyAttribute *> *attributes;
+@property (nonatomic, copy) RDPropertySignature *signature;
 @end
 
 @implementation RDCBProperty : NSObject
@@ -111,18 +111,15 @@ NSInteger const RDClassBuilderReflectionErrorCode = 259;
 }
 
 - (void)addPropertyWithName:(NSString *)name type:(RDType *)type {
-    [self addPropertyWithName:name type:type attributes:@[]];
 }
 
-- (void)addPropertyWithName:(NSString *)name type:(RDType *)type attributes:(NSArray<RDPropertyAttribute *> *)attributes {
+- (void)addPropertyWithName:(NSString *)name signature:(RDPropertySignature *)signature {
     NSParameterAssert(name);
-    NSParameterAssert(type);
-    NSParameterAssert(attributes);
+    NSParameterAssert(signature);
     self.properties[name] = ({
         RDCBProperty *property = [RDCBProperty new];
         property.name = name;
-        property.type = type;
-        property.attributes = attributes.copy;
+        property.signature = signature;
         property;
     });
 }

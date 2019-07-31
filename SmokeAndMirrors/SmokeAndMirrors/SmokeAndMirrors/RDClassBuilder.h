@@ -25,7 +25,7 @@ RD_EXTERN NSErrorDomain const RDClassBuilderErrorDomain;
 - (void)addMethodWithSelector:(SEL)selector signature:(RDMethodSignature *)signature implementation:(IMP)implementation;
 
 - (void)addPropertyWithName:(NSString *)name type:(RDType *)type;
-- (void)addPropertyWithName:(NSString *)name type:(RDType *)type attributes:(NSArray<RDPropertyAttribute *> *)attributes;
+- (void)addPropertyWithName:(NSString *)name signature:(RDPropertySignature *)signature;
 
 - (void)addProtocolConformance:(Protocol *)protocol;
 

@@ -280,7 +280,6 @@ NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL is
 
 @interface RDProtocolProperty()
 @property (nonatomic, readonly) Property property;
-@property (nonatomic, readonly) RDPropertySignature *signature;
 @end
 
 @implementation RDProtocolProperty
@@ -633,13 +632,43 @@ NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstan
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+NSString *propertyAttributeString(RDPropertyAttribute *attribute) {
+    if (attribute == NULL)
+        return nil;
+    
+    switch (attribute->kind) {
+        case RDPropertyAttributeKindReadOnly:
+            return @"readonly";
+        case RDPropertyAttributeKindCopy:
+            return @"copy";
+        case RDPropertyAttributeKindRetain:
+            return @"retain";
+        case RDPropertyAttributeKindNonatomic:
+            return @"nonatomic";
+        case RDPropertyAttributeKindGetter:
+            return [NSString stringWithFormat:@"getter=%@", attribute->value];
+        case RDPropertyAttributeKindSetter:
+            return [NSString stringWithFormat:@"setter=%@", attribute->value];
+        case RDPropertyAttributeKindDynamic:
+            return @"dynamic";
+        case RDPropertyAttributeKindWeak:
+            return @"weak";
+        case RDPropertyAttributeKindGarbageCollected:
+            return @"gc";
+        case RDPropertyAttributeKindLegacyEncoding:
+            return @"legacy";
+        case RDPropertyAttributeKindIvarName:
+            return [NSString stringWithFormat:@"ivar=%@", attribute->value];
+    }
+}
+
 NSString *propertyString(NSString *name, RDPropertySignature *signature, BOOL isInstanceLevel) {
-    NSMutableArray<NSString *> *attributeStrings = map_nn(signature.attributes, ^NSString *(RDPropertyAttribute *attribute) {
-        return attribute.description;
-    }).mutableCopy;
+    NSArray<NSString *> *attributeStrings = map_nn(RDAllPropertyAttributeKinds(), ^NSString *(NSNumber *attribute) {
+        return propertyAttributeString([signature attributeWithKind:(RDPropertyAttributeKind)attribute.charValue]);
+    });
     
     if (!isInstanceLevel)
-        [attributeStrings addObject:@"class"];
+        attributeStrings = [attributeStrings arrayByAddingObject:@"class"];
     
     NSString *attributes = attributeStrings.count == 0 ? nil : [NSString stringWithFormat:@"(%@)", [attributeStrings componentsJoinedByString:@", "]];
     

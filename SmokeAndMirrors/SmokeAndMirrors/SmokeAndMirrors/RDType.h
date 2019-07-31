@@ -3,13 +3,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef size_t RDTypeSize;
-extern RDTypeSize const RDTypeSizeUnknown;
+RD_EXTERN RDTypeSize const RDTypeSizeUnknown;
 
 typedef ptrdiff_t RDTypeAlign;
-extern RDTypeAlign const RDTypeAlignUnknown;
+RD_EXTERN RDTypeAlign const RDTypeAlignUnknown;
 
 typedef ptrdiff_t RDOffset;
-extern RDOffset const RDOffsetUnknown;
+RD_EXTERN RDOffset const RDOffsetUnknown;
 
 typedef NS_ENUM(char, RDTypeEncodingSymbol) {
     RDTypeEncodingSymbolArrayBegin          = '[',
@@ -102,18 +102,34 @@ static RDMethodArgumentAttributes RDMethodArgumentAttributesNone = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef NS_ENUM(char, RDPropertyAttributeKind) {
-    RDPropertyAttributeReadOnly             = 'R',
-    RDPropertyAttributeCopy                 = 'C',
-    RDPropertyAttributeRetain               = '&',
-    RDPropertyAttributeNonatomic            = 'N',
-    RDPropertyAttributeGetter               = 'G',
-    RDPropertyAttributeSetter               = 'S',
-    RDPropertyAttributeDynamic              = 'D',
-    RDPropertyAttributeWeak                 = 'W',
-    RDPropertyAttributeGarbageCollected     = 'P',
-    RDPropertyAttributeLegacyEncoding       = 't',
-    RDPropertyAttributeIvarName             = 'V',
+    RDPropertyAttributeKindReadOnly             = 'R',
+    RDPropertyAttributeKindCopy                 = 'C',
+    RDPropertyAttributeKindRetain               = '&',
+    RDPropertyAttributeKindNonatomic            = 'N',
+    RDPropertyAttributeKindGetter               = 'G',
+    RDPropertyAttributeKindSetter               = 'S',
+    RDPropertyAttributeKindDynamic              = 'D',
+    RDPropertyAttributeKindWeak                 = 'W',
+    RDPropertyAttributeKindGarbageCollected     = 'P',
+    RDPropertyAttributeKindLegacyEncoding       = 't',
+    RDPropertyAttributeKindIvarName             = 'V',
 };
+
+typedef NS_OPTIONS(NSUInteger, RDPropertyAttributes) {
+    RDPropertyAttributeReadOnly             = (1 << 0),
+    RDPropertyAttributeCopy                 = (1 << 0),
+    RDPropertyAttributeRetain               = (1 << 0),
+    RDPropertyAttributeNonatomic            = (1 << 0),
+    RDPropertyAttributeGetter               = (1 << 0),
+    RDPropertyAttributeSetter               = (1 << 0),
+    RDPropertyAttributeDynamic              = (1 << 0),
+    RDPropertyAttributeWeak                 = (1 << 0),
+    RDPropertyAttributeGarbageCollected     = (1 << 0),
+    RDPropertyAttributeLegacyEncoding       = (1 << 0),
+    RDPropertyAttributeIvarName             = (1 << 0),
+};
+
+RD_EXTERN NSArray<NSNumber *> *RDAllPropertyAttributeKinds(void);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -219,6 +235,7 @@ RD_FINAL_CLASS
 @property (nonatomic, readonly) NSUInteger argumentsCount;
 @property (nonatomic, readonly) RDMethodArgument *returnValue;
 @property (nonatomic, readonly) BOOL isMethodSignature;
+@property (nonatomic, readonly) BOOL isBlockSignature;
 
 + (nullable instancetype)signatureWithObjcTypeEncoding:(const char *)types;
 - (RDMethodArgument *)argumentAtIndex:(NSUInteger)index;
@@ -227,19 +244,18 @@ RD_FINAL_CLASS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface RDPropertyAttribute : NSObject
-@property (nonatomic, readonly) RDPropertyAttributeKind kind;
-@property (nonatomic, readonly, nullable) NSString *value;
-@end
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct {
+    RDPropertyAttributeKind kind;
+    NSString *value;
+} RDPropertyAttribute;
 
 @interface RDPropertySignature : NSObject
 @property (nonatomic, readonly, nullable) NSString *ivarName;
 @property (nonatomic, readonly, nullable) RDType *type;
-@property (nonatomic, readonly) NSArray<RDPropertyAttribute *> *attributes;
+@property (nonatomic, readonly) NSUInteger attributesCount;
 
 + (nullable instancetype)signatureWithObjcTypeEncoding:(const char *)encoding;
+- (RDPropertyAttribute *)attributeWithKind:(RDPropertyAttributeKind)kind;
 
 @end
 
