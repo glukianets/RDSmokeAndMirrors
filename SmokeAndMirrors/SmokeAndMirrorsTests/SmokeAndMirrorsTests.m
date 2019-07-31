@@ -13,7 +13,9 @@
     Class *classlist = objc_copyClassList(&count);
     for (unsigned i = 0; i < count; ++i) {
         @autoreleasepool {
-            XCTAssertNotNil([smoke mirrorForObjcClass:classlist[i]]);
+            RDClass *mirror = [smoke mirrorForObjcClass:classlist[i]];
+            XCTAssertNotNil(mirror);
+            printf("\n\n%s\n\n", mirror.description.UTF8String);
         }
     }
     free(classlist);
@@ -25,7 +27,9 @@
     Protocol *__unsafe_unretained *protocolList = objc_copyProtocolList(&count);
     for (unsigned i = 0; i < count; ++i) {
         @autoreleasepool {
-            XCTAssertNotNil([smoke mirrorForObjcProtocol:protocolList[i]]);
+            RDProtocol *mirror = [smoke mirrorForObjcProtocol:protocolList[i]];
+            XCTAssertNotNil(mirror);
+            printf("\n\n%s\n\n", mirror.description.UTF8String);
         }
     }
     free(protocolList);

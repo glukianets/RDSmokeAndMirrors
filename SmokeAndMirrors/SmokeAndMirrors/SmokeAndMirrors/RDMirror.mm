@@ -583,7 +583,10 @@ NSString *methodArgumentString(RDMethodArgument *argument) {
         return nil;
     
     NSMutableString *attributesString = [NSMutableString string];
-    if (argument->attributes & RDMethodArgumentAttributeConst)
+    RDType *type = argument->type;
+    BOOL isConst = RD_CAST(type, RDCompositeType).kind == RDCompositeTypeKindConst;
+    
+    if (argument->attributes & RDMethodArgumentAttributeConst && !isConst)
         [attributesString appendString:@"const "];
     if (argument->attributes & RDMethodArgumentAttributeIn)
         [attributesString appendString:@"in "];
@@ -597,8 +600,8 @@ NSString *methodArgumentString(RDMethodArgument *argument) {
         [attributesString appendString:@"byref "];
     if (argument->attributes & RDMethodArgumentAttributeOneWay)
         [attributesString appendString:@"oneway "];
-    
-    return [NSString stringWithFormat:@"(%@%@)", attributesString, argument->type.description ?: @"?"];
+    [attributesString appendString:argument->type.description ?: @"?"];
+    return attributesString;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -614,20 +617,27 @@ NSString *blockString(NSString *name, RDMethodSignature *signature) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstanceLevel) {
-    NSString *returnType = methodArgumentString(signature.returnValue) ?: @"()";
-    NSString *body = ({
-        NSMutableString *body = [NSMutableString string];
-        NSArray<NSString *> *nameParts = [[NSString stringWithUTF8String:sel_getName(selector)] componentsSeparatedByString:@":"];
-        
-        for (NSUInteger i = 0; i < MAX(nameParts.count, signature.argumentsCount); ++i)
-            [body appendFormat:@" %@:%@arg%zu",
-             (i < nameParts.count ? nameParts[i] : @""),
-             methodArgumentString([signature argumentAtIndex:i]) ?: @"",
+    NSMutableString *result = [NSMutableString string];
+    [result appendFormat:@"%c ", isInstanceLevel ? '-' : '+'];
+    if (NSString *ret = methodArgumentString(signature.returnValue); ret.length > 0)
+        [result appendFormat:@"(%@)", ret ?: @""];
+
+    NSString *selectorString = [NSString stringWithUTF8String:sel_getName(selector)];
+    if (RDSelectorArgumentsCount(selector) == 0) {
+        [result appendFormat:@"%@;", selectorString];
+    } else {
+        NSArray<NSString *> *nameParts = [selectorString componentsSeparatedByString:@":"];
+        nameParts = [nameParts subarrayWithRange:NSMakeRange(0, nameParts.count - 1)];
+        NSUInteger argCount = MAX(nameParts.count, (MAX(signature.argumentsCount, 2) - 2));
+        for (NSUInteger i = 0; i < argCount; ++i)
+            [result appendFormat:@"%s%@:(%@)arg%zu",
+             i > 0 ? " " : "",
+             i < nameParts.count && nameParts[i] ? nameParts[i] : @"",
+             methodArgumentString([signature argumentAtIndex:i + 2]) ?: @"",
              i];
-        
-        body;
-    });
-    return [NSString stringWithFormat:@"%c %@%@;", isInstanceLevel ? '-' : '+' , returnType, body];
+        [result appendString:@";"];
+    }
+    return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

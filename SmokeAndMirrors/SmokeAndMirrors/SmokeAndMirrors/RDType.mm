@@ -773,6 +773,17 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     return RD_FLEX_ARRAY_ELEMENT(self, RDMethodArgument, self.argumentsCount);
 }
 
+- (BOOL)isMethodSignature {
+    return self.argumentsCount >= 2
+        && RD_CAST([self argumentAtIndex:0]->type, RDObjectType) != nil
+        && RD_CAST([self argumentAtIndex:1]->type, RDPrimitiveType).kind == RDPrimitiveTypeKindSelector;
+}
+
+- (BOOL)isBlockSignature {
+    return self.argumentsCount >= 1
+        && RD_CAST([self argumentAtIndex:0]->type, RDCompositeType).kind == RDCompositeTypeKindPointer;
+}
+
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

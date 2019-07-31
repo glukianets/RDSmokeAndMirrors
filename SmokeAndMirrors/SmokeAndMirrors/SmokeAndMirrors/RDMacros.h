@@ -103,9 +103,9 @@ NS_ASSUME_NONNULL_BEGIN
 #define _RD_LIST(MACRO, ...) _RD_LIST_(RD_MACRO_ARG_COUNT(__VA_ARGS__), MACRO, __VA_ARGS__)
 
 #define _RD_CONFORMSTOPROTOCOL(I, PROTO) [obj conformsToProtocol: @protocol(PROTO)]
-#define _RD_CAST_MANY(OBJ, CLS, ...) (CLS<__VA_ARGS__> *)({ id obj = (OBJ); (([obj isKindOfClass: CLS.self] && _RD_ALL_OF(_RD_CONFORMSTOPROTOCOL, __VA_ARGS__)) ? obj : nil); })
-#define _RD_CAST_ONE(OBJ, CLS) (CLS *)({ id obj = (OBJ); [obj isKindOfClass: CLS.self] ? obj : nil; })
-#define _RD_CAST_ZERO(OBJ) (id)({ id obj = (OBJ); obj; })
+#define _RD_CAST_MANY(OBJ, CLS, ...) ((CLS<__VA_ARGS__> *)({ id obj = (OBJ); (([obj isKindOfClass: CLS.self] && _RD_ALL_OF(_RD_CONFORMSTOPROTOCOL, __VA_ARGS__)) ? obj : nil); }))
+#define _RD_CAST_ONE(OBJ, CLS) ((CLS *)({ id obj = (OBJ); [obj isKindOfClass: CLS.self] ? obj : nil; }))
+#define _RD_CAST_ZERO(OBJ) ((id)({ id obj = (OBJ); obj; }))
 #define _RD_CAST_(N, OBJ, ...) RD_MACRO_CONCATENATE(_RD_CAST_, N)(OBJ, ##__VA_ARGS__)
 #define RD_CAST(OBJ, ...) _RD_CAST_(RD_MACRO_ARG_COUNT_ZOM(__VA_ARGS__), OBJ, ##__VA_ARGS__)
 
