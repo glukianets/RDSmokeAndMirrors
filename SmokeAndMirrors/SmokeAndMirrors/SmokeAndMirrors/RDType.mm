@@ -57,7 +57,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
         
         NSAssert(size == type.size || alignment == type.alignment, @"Miscalculated size and alignment: %zu, %zu instead of %zu, %zu (parsed type is %@)", type.size, type.alignment, size, alignment, type);
         
-    } @catch(id e) {
+    } @catch(...) {
         // NSGetSizeAndAlignment is kinda buggy
     }
 
@@ -746,6 +746,15 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
 
 @implementation RDMethodSignature
 
++ (instancetype)alloc {
+    if (self.class == RDMethodSignature.self) {
+        static RDMethodSignature *instance = class_createInstance(RDMethodSignature.self, 0);
+        return instance;
+    } else {
+        return [super alloc];
+    }
+}
+
 + (instancetype)signatureWithObjcTypeEncoding:(const char *)encoding {
     if (encoding != nil && *encoding != '\0')
         return parseCheck(parseMethodSignature, &encoding);
@@ -792,6 +801,15 @@ static NSUInteger const RDPropertyAttributeKindCount = 11;
 
 @implementation RDPropertySignature {
     RDPropertyAttribute _attributes[RDPropertyAttributeKindCount];
+}
+
++ (instancetype)alloc {
+    if (self.class == RDMethodSignature.self) {
+        static RDPropertySignature *instance = class_createInstance(RDPropertySignature.self, 0);
+        return instance;
+    } else {
+        return [super alloc];
+    }
 }
 
 + (instancetype)signatureWithObjcTypeEncoding:(const char *)encoding {
@@ -1096,6 +1114,7 @@ RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encod
             case RDPropertyAttributeKindGarbageCollected:
                 return (RDPropertyAttribute) {.kind=(RDPropertyAttributeKind)c, .value=nil};
                 
+            case RDPropertyAttributeKindIvarName:
             case RDPropertyAttributeKindLegacyEncoding:
             case RDPropertyAttributeKindGetter:
             case RDPropertyAttributeKindSetter:
@@ -1114,12 +1133,9 @@ RDPropertySignature *parsePropertySignature(const char *_Nonnull *_Nonnull encod
         return nil;
     
     std::vector<RDPropertyAttribute> attributes;
-    NSString *name = nil;
     while (**encoding != '\0')
         if (*((*encoding)++) != ',')
             return nil;
-        else if (**encoding == 'V' && ++(*encoding))
-            name = parseString(encoding, '\0');
         else if(RDPropertyAttribute attribute = parseAttribute(encoding); attribute.kind != 0)
             attributes.emplace_back(attribute);
         else

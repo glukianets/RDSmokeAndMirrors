@@ -8,9 +8,10 @@
 #define ECODE(VALUE, CODE) (void)(error != NULL && (*error = [NSError errorWithDomain:RDClassBuilderErrorDomain code:(CODE) userInfo:nil])), (VALUE)
 
 NSErrorDomain const RDClassBuilderErrorDomain = @"RDClassBuilderErrorDomain";
-NSInteger const RDClassBuilderInvalidNameCode = 257;
+NSInteger const RDClassBuilderUnknownErrorCode = 260;
 NSInteger const RDClassBuilderInvalidArgumentCode = 258;
 NSInteger const RDClassBuilderReflectionErrorCode = 259;
+NSInteger const RDClassBuilderInvalidNameCode = 260;
 
 @interface RDCBIvar : NSObject
 @property (nonatomic, copy) NSString *name;
@@ -172,8 +173,8 @@ NSInteger const RDClassBuilderReflectionErrorCode = 259;
                                      userInfo:error == nil ? nil : @{ NSUnderlyingErrorKey: error }];
 }
 
-- (void)buildUpon:(Class)cls error:(NSError *_Nullable *_Nullable)error {
-    [self _buildClass:cls error:error];
+- (BOOL)buildUpon:(Class)cls error:(NSError *_Nullable *_Nullable)error {
+    return [self _buildClass:cls error:error] != Nil;
 }
 
 - (Class)_buildClass:(nullable Class)cls error:(NSError *_Nullable *_Nullable)error {
@@ -184,15 +185,32 @@ NSInteger const RDClassBuilderReflectionErrorCode = 259;
     RDClass *mirror = [smoke mirrorForObjcClass:self.superclass];
     if (mirror == nil)
         return ECODE(Nil, RDClassBuilderReflectionErrorCode);
+  
+    for (RDCBProtocol *protocol in self.protocols) {
+        class_addProtocol(cls, protocol.protocol);
+    }
     
-    for (RDIvar *ivar in self.ivars) {
+    for (RDCBProperty *property in self.properties) {
+        unsigned attributeCount = (unsigned)property.signature.attributesCount;
+        objc_property_attribute_t attributes[attributeCount];
+        class_addProperty(cls, property.name.UTF8String, attributes, attributeCount);
+    }
+    
+    for (RDCBIvar *ivar in self.ivars) {
         RDType *type = ivar.type;
         size_t size = type.size;
         size_t alignment = type.alignment;
         const char *encoding = type.objCTypeEncoding;
         class_addIvar(cls, ivar.name.UTF8String, size, alignment, encoding);
     }
-        
+    
+    for (RDCBMethod *method in self.methods) {
+        IMP imp = method.implementation ?: method.block ? imp_implementationWithBlock(method.block) : nil;
+        if (imp == NULL)
+            return ECODE(Nil, RDClassBuilderUnknownErrorCode);
+        class_addMethod(cls, method.selector, imp, method.signature.objcTypeEncoding);
+    }
+    
     return VALUE(Nil);
 }
 

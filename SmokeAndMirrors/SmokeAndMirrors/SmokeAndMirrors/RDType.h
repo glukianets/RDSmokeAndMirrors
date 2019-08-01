@@ -115,20 +115,6 @@ typedef NS_ENUM(char, RDPropertyAttributeKind) {
     RDPropertyAttributeKindIvarName             = 'V',
 };
 
-typedef NS_OPTIONS(NSUInteger, RDPropertyAttributes) {
-    RDPropertyAttributeReadOnly             = (1 << 0),
-    RDPropertyAttributeCopy                 = (1 << 0),
-    RDPropertyAttributeRetain               = (1 << 0),
-    RDPropertyAttributeNonatomic            = (1 << 0),
-    RDPropertyAttributeGetter               = (1 << 0),
-    RDPropertyAttributeSetter               = (1 << 0),
-    RDPropertyAttributeDynamic              = (1 << 0),
-    RDPropertyAttributeWeak                 = (1 << 0),
-    RDPropertyAttributeGarbageCollected     = (1 << 0),
-    RDPropertyAttributeLegacyEncoding       = (1 << 0),
-    RDPropertyAttributeIvarName             = (1 << 0),
-};
-
 RD_EXTERN NSArray<NSNumber *> *RDAllPropertyAttributeKinds(void);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,9 +222,10 @@ RD_FINAL_CLASS
 @property (nonatomic, readonly) RDMethodArgument *returnValue;
 @property (nonatomic, readonly) BOOL isMethodSignature;
 @property (nonatomic, readonly) BOOL isBlockSignature;
+@property (nonatomic, readonly) const char *objcTypeEncoding;
 
 + (nullable instancetype)signatureWithObjcTypeEncoding:(const char *)types;
-- (RDMethodArgument *)argumentAtIndex:(NSUInteger)index;
+- (nullable RDMethodArgument *)argumentAtIndex:(NSUInteger)index;
 
 @end
 
@@ -249,13 +236,15 @@ typedef struct {
     NSString *value;
 } RDPropertyAttribute;
 
+RD_FINAL_CLASS
 @interface RDPropertySignature : NSObject
 @property (nonatomic, readonly, nullable) NSString *ivarName;
 @property (nonatomic, readonly, nullable) RDType *type;
 @property (nonatomic, readonly) NSUInteger attributesCount;
+@property (nonatomic, readonly) const char *objcTypeEncoding;
 
 + (nullable instancetype)signatureWithObjcTypeEncoding:(const char *)encoding;
-- (RDPropertyAttribute *)attributeWithKind:(RDPropertyAttributeKind)kind;
+- (nullable RDPropertyAttribute *)attributeWithKind:(RDPropertyAttributeKind)kind;
 
 @end
 

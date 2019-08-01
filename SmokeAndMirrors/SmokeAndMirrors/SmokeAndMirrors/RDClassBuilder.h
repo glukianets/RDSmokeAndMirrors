@@ -15,7 +15,7 @@ RD_EXTERN NSErrorDomain const RDClassBuilderErrorDomain;
 - (nullable Class)buildNamed:(NSString *)name error:(NSError *_Nullable *_Nullable)error;
 - (Class)buildNamed:(NSString *)name;
 
-- (void)buildUpon:(Class)cls error:(NSError *_Nullable *_Nullable)error;
+- (BOOL)buildUpon:(Class)cls error:(NSError *_Nullable *_Nullable)error;
 - (void)buildUpon:(Class)cls;
 
 - (void)addIvarWithName:(NSString *)name type:(RDType *)type;

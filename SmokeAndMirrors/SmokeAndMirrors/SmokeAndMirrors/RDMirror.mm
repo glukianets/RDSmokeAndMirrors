@@ -600,6 +600,7 @@ NSString *methodArgumentString(RDMethodArgument *argument) {
         [attributesString appendString:@"byref "];
     if (argument->attributes & RDMethodArgumentAttributeOneWay)
         [attributesString appendString:@"oneway "];
+    
     [attributesString appendString:argument->type.description ?: @"?"];
     return attributesString;
 }

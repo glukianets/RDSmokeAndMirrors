@@ -13,7 +13,7 @@
 }
 
 - (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
-    return nil;
+    return @"";
 }
 
 - (NSString *)_value_formatWithBytes:(void *)bytes {
