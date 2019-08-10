@@ -25,7 +25,7 @@
     return self;
 }
 
-- (id)objectAtKeyedSubscribt:(NSString *)ivarName {
+- (id)objectAtKeyedSubscribt:(NSString *)__unused ivarName {
     return nil;
 }
 

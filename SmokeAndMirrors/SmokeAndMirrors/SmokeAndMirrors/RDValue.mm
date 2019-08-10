@@ -45,7 +45,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 
 #pragma mark Initialization
 
-+ (instancetype)allocWithZone:(struct _NSZone *)zone {
++ (instancetype)allocWithZone:(struct _NSZone *)__unused zone {
     if (self == RDValue.self || self == RDMutableValue.self) {
         static RDValue *instance = class_createInstance(RDValue.self, 0);
         static RDMutableValue *mutableInstance = class_createInstance(RDMutableValue.self, 0);
@@ -88,8 +88,8 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
 }
 
 - (instancetype)initWithBytes:(const void *)bytes ofType:(RDType *)type {
-    size_t size = type.size;
-    size_t alignment = type.alignment;
+    RDTypeSize size = type.size;
+    RDTypeAlign alignment = type.alignment;
 
     if (size == RDTypeSizeUnknown || size == 0 || alignment == RDTypeAlignUnknown || alignment == 0)
         return nil;
@@ -111,8 +111,8 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     if (type == nil || type.kind != RDAggregateTypeKindStruct)
         return nil;
     
-    size_t size = type.size;
-    size_t alignment = type.alignment;
+    RDTypeSize size = type.size;
+    RDTypeAlign alignment = type.alignment;
     
     if (size == RDTypeSizeUnknown || size == 0 || alignment == RDTypeAlignUnknown || alignment == 0)
         return nil;
@@ -240,7 +240,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     return [self copyWithZone:nil];
 }
 
-- (RDValue *)copyWithZone:(NSZone *)zone {
+- (RDValue *)copyWithZone:(NSZone *)__unused zone {
     if (self.class == RDValue.self)
         return self;
     else
@@ -253,7 +253,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     return [self mutableCopyWithZone:nil];
 }
 
-- (RDMutableValue *)mutableCopyWithZone:(NSZone *)zone {
+- (RDMutableValue *)mutableCopyWithZone:(NSZone *)__unused zone {
     return [[RDMutableValue alloc] initWithBytes:DATA(self) ofType:_type];
 }
 
@@ -345,7 +345,7 @@ static inline bool copy(void *dst, RDType *dstType, const void *src, RDType *src
     return copy(DATA(self), _type, value, type);
 }
 
-- (BOOL)setValue:(void *)value objCType:(const char *)type atIndex:(NSUInteger)index; {
+- (BOOL)setValue:(void *)value objCType:(const char *)type atIndex:(NSUInteger)index {
     if (RDType *rdtype = [RDType typeWithObjcTypeEncoding:type]; rdtype != nil)
         return [self setValue:value type:rdtype atIndex:index];
     else

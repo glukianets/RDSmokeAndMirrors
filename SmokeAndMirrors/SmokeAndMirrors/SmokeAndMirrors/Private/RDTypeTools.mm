@@ -4,15 +4,15 @@
 
 @implementation RDType(RDPrivate)
 
-- (void)_value_retainBytes:(void *_Nonnull)bytes {
+- (void)_value_retainBytes:(void *_Nonnull)__unused bytes {
     // Do nothing for non-retainable types by default
 }
 
-- (void)_value_releaseBytes:(void *_Nonnull)bytes {
+- (void)_value_releaseBytes:(void *_Nonnull)__unused bytes {
     // Do nothing for non-retainable types by default
 }
 
-- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+- (NSString *)_value_describeBytes:(void *)__unused bytes additionalInfo:(NSMutableArray<NSString *> *)__unused info {
     return @"";
 }
 
@@ -125,7 +125,7 @@
 
 @implementation RDVoidType(RDPrivate)
 
-- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+- (NSString *)_value_describeBytes:(void *)__unused bytes additionalInfo:(NSMutableArray<NSString *> *)__unused info {
     return @"void";
 }
 
@@ -142,7 +142,7 @@
 
 @implementation RDPrimitiveType(RDPrivate)
 
-- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)info {
+- (NSString *)_value_describeBytes:(void *)bytes additionalInfo:(NSMutableArray<NSString *> *)__unused info {
     switch (self.kind) {
         case RDPrimitiveTypeKindSelector:
             return [NSString stringWithFormat:@"@selector(%s)", sel_getName(*(SEL *)bytes)];
@@ -301,14 +301,14 @@
 - (void)_value_retainBytes:(void *)bytes {
     if (bytes != NULL)
         for (NSUInteger i = 0; i < self.count; ++i)
-            if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDOffsetUnknown)
+            if (RDOffset offset = [self offsetForElementAtIndex:i]; offset != RDOffsetUnknown)
                 [self.type _value_retainBytes:(uint8_t *)bytes + offset];
 }
 
 - (void)_value_releaseBytes:(void *)bytes {
     if (bytes != NULL)
         for (NSUInteger i = 0; i < self.count; ++i)
-            if (size_t offset = [self offsetForElementAtIndex:i]; offset != RDOffsetUnknown)
+            if (RDOffset offset = [self offsetForElementAtIndex:i]; offset != RDOffsetUnknown)
                 [self.type _value_releaseBytes:(uint8_t *)bytes + offset];
 }
 

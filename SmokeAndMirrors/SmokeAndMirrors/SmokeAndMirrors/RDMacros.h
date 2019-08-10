@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 #endif
 
 #define RD_FINAL_CLASS __attribute__((objc_subclassing_restricted))
+#define RD_UNUSED __attribute__((unused))
 
 #if __has_feature(attribute_ns_consumes_self)
 #define RD_CONSUMES_SELF __attribute__((ns_consumes_self))
@@ -124,7 +125,7 @@ static inline void RDRunCleanupBlock(void (^_Nullable *_Nullable block)(id)) {
         (*block)(*block);
 }
 
-#define RD_DEFER __attribute__((cleanup(RDRunCleanupBlock))) __attribute__((unused)) void (^ RD_MACRO_CONCATENATE(_cleanup, __COUNTER__))(id) = ^(void (^_block)(id))
+#define RD_DEFER __attribute__((cleanup(RDRunCleanupBlock))) __attribute__((unused)) void (^ RD_MACRO_CONCATENATE(_cleanup, __COUNTER__))(id) = ^(void (^__unused _block)(id))
 
 NS_ASSUME_NONNULL_END
 

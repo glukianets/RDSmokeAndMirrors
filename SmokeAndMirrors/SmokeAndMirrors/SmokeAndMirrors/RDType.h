@@ -121,8 +121,8 @@ RD_EXTERN NSArray<NSNumber *> *RDAllPropertyAttributeKinds(void);
 
 @interface RDType : NSObject<NSSecureCoding>
 
-@property (nonatomic, readonly) size_t size;
-@property (nonatomic, readonly) size_t alignment;
+@property (nonatomic, readonly) RDTypeSize size;
+@property (nonatomic, readonly) RDOffset alignment;
 @property (nonatomic, readonly) const char *objCTypeEncoding;
 
 + (nullable instancetype)typeWithObjcTypeEncoding:(nullable const char *)types;
@@ -182,7 +182,7 @@ RD_EXTERN NSArray<NSNumber *> *RDAllPropertyAttributeKinds(void);
 @property (nonatomic, readonly) NSUInteger count;
 @property (nonatomic, readonly, nullable) RDType *type;
 
-- (size_t)offsetForElementAtIndex:(NSUInteger)index;
+- (RDOffset)offsetForElementAtIndex:(NSUInteger)index;
 
 @end
 

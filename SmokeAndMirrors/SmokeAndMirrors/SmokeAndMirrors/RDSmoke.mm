@@ -66,7 +66,7 @@ RD_FINAL_CLASS
     return (NSUInteger)_value;
 }
 
-- (nonnull id)copyWithZone:(nullable NSZone *)zone {
+- (nonnull id)copyWithZone:(nullable NSZone *)__unused zone {
     return self;
 }
 

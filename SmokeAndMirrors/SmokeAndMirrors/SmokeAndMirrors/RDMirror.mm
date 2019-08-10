@@ -607,7 +607,8 @@ NSString *methodArgumentString(RDMethodArgument *argument) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-NSString *blockString(NSString *name, RDMethodSignature *signature) {
+NSString *blockString(NSString *, RDMethodSignature *signature) {
+    // TODO: decide what to do with the first argument here
     NSString *returnType = methodArgumentString(signature.returnValue);
     NSMutableArray<NSString *> *arguments = [NSMutableArray array];
     for (NSUInteger i = 0; i < signature.argumentsCount; ++i)
@@ -629,7 +630,7 @@ NSString *methodString(SEL selector, RDMethodSignature *signature, BOOL isInstan
     } else {
         NSArray<NSString *> *nameParts = [selectorString componentsSeparatedByString:@":"];
         nameParts = [nameParts subarrayWithRange:NSMakeRange(0, nameParts.count - 1)];
-        NSUInteger argCount = MAX(nameParts.count, (MAX(signature.argumentsCount, 2) - 2));
+        NSUInteger argCount = MAX(nameParts.count, (MAX(signature.argumentsCount, 2u) - 2));
         for (NSUInteger i = 0; i < argCount; ++i)
             [result appendFormat:@"%s%@:(%@)arg%zu",
              i > 0 ? " " : "",

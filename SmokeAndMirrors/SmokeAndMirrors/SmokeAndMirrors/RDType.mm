@@ -55,7 +55,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
         NSUInteger size = 0, alignment = 0;
         NSGetSizeAndAlignment(clonedEncoding, &size, &alignment);
         
-        NSAssert(size == type.size || alignment == type.alignment, @"Miscalculated size and alignment: %zu, %zu instead of %zu, %zu (parsed type is %@)", type.size, type.alignment, size, alignment, type);
+        NSAssert(size == type.size || (RDTypeAlign)alignment == type.alignment, @"Miscalculated size and alignment: %zu, %zu instead of %zu, %zu (parsed type is %@)", type.size, type.alignment, size, alignment, type);
         
     } @catch(...) {
         // NSGetSizeAndAlignment is kinda buggy
@@ -69,7 +69,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return type;
 }
 
-- (instancetype)initWithByteSize:(size_t)size alignment:(size_t)alignment {
+- (instancetype)initWithByteSize:(RDTypeSize)size alignment:(RDTypeAlign)alignment {
     self = [super init];
     if (self) {
         _size = size;
@@ -110,11 +110,11 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 
 #pragma mark <NSCoding>
 
-- (void)encodeWithCoder:(nonnull NSCoder *)coder {
+- (void)encodeWithCoder:(nonnull NSCoder *)__unused coder {
     //TODO: implement
 }
 
-- (nullable instancetype)initWithCoder:(nonnull NSCoder *)coder {
+- (nullable instancetype)initWithCoder:(nonnull NSCoder *)__unused coder {
     //TODO: implement
     return nil;
 }
@@ -139,7 +139,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return [type isKindOfClass:RDUnknownType.self];
 }
 
-- (BOOL)isAssignableFromType:(nullable RDType *)type {
+- (BOOL)isAssignableFromType:(nullable RDType *)__unused type {
     return NO;
 }
 
@@ -162,7 +162,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return [type isKindOfClass:RDVoidType.self];
 }
 
-- (BOOL)isAssignableFromType:(nullable RDType *)type {
+- (BOOL)isAssignableFromType:(nullable RDType *)__unused type {
     return NO;
 }
 
@@ -173,7 +173,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDPrimitiveType : RDType
 
 - (instancetype)initWithKind:(RDPrimitiveTypeKind)kind {
-    std::pair<size_t, size_t> sizeAndAlignement = [self.class sizeAndAlignmentForKind:kind];
+    std::pair<RDTypeSize, RDTypeAlign> sizeAndAlignement = [self.class sizeAndAlignmentForKind:kind];
     self = [super initWithByteSize:sizeAndAlignement.first alignment:sizeAndAlignement.second];
     if (self) {
         _kind = kind;
@@ -250,7 +250,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     }
 }
 
-+ (std::pair<size_t, size_t>)sizeAndAlignmentForKind:(RDPrimitiveTypeKind)kind {
++ (std::pair<RDTypeSize, RDTypeAlign>)sizeAndAlignmentForKind:(RDPrimitiveTypeKind)kind {
     switch (kind) {
         case RDPrimitiveTypeKindSelector:
             return { sizeof(SEL), alignof(SEL) };
@@ -316,7 +316,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return self;
 }
 
-- (instancetype)initWithBlockArgumentString:(NSString *)string {
+- (instancetype)initWithBlockArgumentString:(NSString *)__unused string {
     self = [super initWithByteSize:sizeof(void (^)(...)) alignment:alignof(void (^)(...))];
     if (self) {
         _kind = RDObjectTypeKindBlock;
@@ -368,7 +368,8 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
 @implementation RDCompositeType
 
 - (instancetype)initWithKind:(RDCompositeTypeKind)kind type:(RDType *)type {
-    size_t size = RDTypeSizeUnknown, alignment = RDTypeAlignUnknown;
+    RDTypeSize size = RDTypeSizeUnknown;
+    RDTypeAlign alignment = RDTypeAlignUnknown;
     switch (kind) {
         case RDCompositeTypeKindPointer:
             size = sizeof(void *);
@@ -450,7 +451,7 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
         && self.bitsize == ((RDBitfieldType *)type).bitsize;
 }
 
-- (BOOL)isAssignableFromType:(RDType *)type {
+- (BOOL)isAssignableFromType:(RDType *)__unused type {
     return NO;
 }
 
@@ -470,17 +471,17 @@ T *parseCheck(T *(*parser)(const char **), const char *_Nonnull *_Nonnull encodi
     return self;
 }
 
-- (size_t)offsetForElementAtIndex:(NSUInteger)index {
+- (RDOffset)offsetForElementAtIndex:(NSUInteger)index {
     if (index >= self.count)
         return RDOffsetUnknown;
 
     if (self.type == nil)
         return RDOffsetUnknown;
     
-    size_t size = self.type.size;
-    size_t alignment = self.type.alignment;
+    RDTypeSize size = self.type.size;
+    RDTypeAlign alignment = self.type.alignment;
 
-    if (size == 0 || size == RDTypeSizeUnknown || alignment == RDTypeSizeUnknown)
+    if (size == 0 || size == RDTypeSizeUnknown || alignment == RDTypeAlignUnknown)
         return RDOffsetUnknown;
     
     while (size % alignment != 0)
@@ -534,7 +535,8 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
 }
 
 - (instancetype)initWithKind:(RDAggregateTypeKind)kind name:(NSString *)name fields:(RDField *)fields count:(NSUInteger)count {
-    size_t size, alignment;
+    RDTypeSize size;
+    RDTypeAlign alignment;
     switch (kind) {
         case RDAggregateTypeKindStruct:
             [self.class layoutStructTypeWithFields:fields count:count size:&size alignment:&alignment];
@@ -698,7 +700,11 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     }
 }
 
-+ (void)layoutUnionTypeWithFields:(RDField *)fields count:(NSUInteger)count size:(size_t *)size alignment:(size_t *)alignment {
++ (void)layoutUnionTypeWithFields:(RDField *)fields
+                            count:(NSUInteger)count
+                             size:(RDTypeSize *)size
+                        alignment:(RDTypeAlign *)alignment
+{
     *size = 1;
     *alignment = 1;
     for (NSUInteger i = 0; i < count; ++i) {
@@ -708,16 +714,20 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
     }
 }
 
-+ (void)layoutStructTypeWithFields:(RDField *)fields count:(NSUInteger)count size:(size_t *)size alignment:(size_t *)alignment {
-    size_t offset = 0;
++ (void)layoutStructTypeWithFields:(RDField *)fields
+                             count:(NSUInteger)count
+                              size:(RDTypeSize *)size
+                         alignment:(RDTypeAlign *)alignment
+{
+    RDOffset offset = 0;
     *alignment = 1;
     
     for (NSUInteger i = 0; i < count; ++i) {
-        size_t falignment = fields[i].type.alignment;
-        size_t fsize = fields[i].type.size;
+        RDTypeAlign falignment = fields[i].type.alignment;
+        RDTypeSize fsize = fields[i].type.size;
         
         if (fields[i].type == nil || falignment == RDTypeAlignUnknown || fsize == RDTypeSizeUnknown) {
-            offset = RDTypeSizeUnknown;
+            offset = RDOffsetUnknown;
             *alignment = RDTypeAlignUnknown;
             break;
         }
@@ -730,14 +740,14 @@ BOOL RDFieldsEqual(RDField *lhs, RDField *rhs) {
         *alignment = MAX(falignment, *alignment);
     }
     
-    if (offset == RDTypeSizeUnknown || *alignment == RDTypeAlignUnknown)
+    if (offset == RDOffsetUnknown || *alignment == RDTypeAlignUnknown)
         for (NSUInteger i = 0; i < count; ++i)
             fields[i].offset = RDOffsetUnknown;
     else
-        while (offset != RDTypeSizeUnknown && offset % *alignment != 0)
+        while (offset != RDOffsetUnknown && offset % *alignment != 0)
             ++offset;
     
-    *size = MAX(1, offset);
+    *size = MAX(1u, offset);
 }
 
 @end

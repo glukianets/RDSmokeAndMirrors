@@ -22,7 +22,7 @@ struct RDBlockObjectCapture {
     RDBlockDescriptor *_descriptor;
 }
 
-void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
+void RDBlockObjectTramp(ffi_cif *, void *ret, void **args, void *cap) {
     __unsafe_unretained id self = *(__autoreleasing id *)args[0];
     RDBlockObjectCapture *capture = (RDBlockObjectCapture *)cap;
     SEL selector = capture->selector;
@@ -42,7 +42,7 @@ void RDBlockObjectTramp(ffi_cif *cif, void *ret, void **args, void *cap) {
     ffi_call(&capture->cifExt, method_getImplementation(method), ret, argValues);
 }
 
-void RDBlockObjectCopy(void *dst, void *src) {
+void RDBlockObjectCopy(void *, void *) {
     // do nothing;
 }
 
@@ -158,7 +158,7 @@ RDBlockObjectCapture *RDBlockObjectCaptureForSelectorInClass(SEL selector, Class
     return self;
 }
 
-- (id)copyWithZone:(NSZone *)zone {
+- (id)copyWithZone:(NSZone *)__unused zone {
     return self;
 }
 

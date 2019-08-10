@@ -4,8 +4,8 @@
 #import <unordered_map>
 
 #define VALUE(VALUE) (void)(error != NULL && (*error = nil)), (VALUE)
-#define ERROR(VALUE, CODE) (void)(error != NULL && (*error = (CODE))), (VALUE)
-#define ECODE(VALUE, CODE) (void)(error != NULL && (*error = [NSError errorWithDomain:RDClassBuilderErrorDomain code:(CODE) userInfo:nil])), (VALUE)
+#define ERROR(CODE) (void)(error != NULL && (*error = (CODE))), Nil
+#define ECODE(CODE) (void)(error != NULL && (*error = [NSError errorWithDomain:RDClassBuilderErrorDomain code:(CODE) userInfo:nil])), Nil
 
 NSErrorDomain const RDClassBuilderErrorDomain = @"RDClassBuilderErrorDomain";
 NSInteger const RDClassBuilderUnknownErrorCode = 260;
@@ -111,7 +111,8 @@ NSInteger const RDClassBuilderInvalidNameCode = 260;
     });
 }
 
-- (void)addPropertyWithName:(NSString *)name type:(RDType *)type {
+- (void)addPropertyWithName:(NSString *)__unused name type:(RDType *)__unused type {
+    
 }
 
 - (void)addPropertyWithName:(NSString *)name signature:(RDPropertySignature *)signature {
@@ -151,7 +152,7 @@ NSInteger const RDClassBuilderInvalidNameCode = 260;
 
 - (nullable Class)buildNamed:(NSString *)name error:(NSError *_Nullable *_Nullable)error {
     if (name.length == 0)
-        return ECODE(Nil, RDClassBuilderInvalidNameCode);
+        return ECODE(RDClassBuilderInvalidNameCode);
     
     __unsafe_unretained Class cls = objc_allocateClassPair(self.superclass, name.UTF8String, 0);
 
@@ -160,7 +161,7 @@ NSInteger const RDClassBuilderInvalidNameCode = 260;
         return VALUE(cls);
     } else {
         objc_disposeClassPair(cls);
-        return ERROR(Nil, err);
+        return ERROR(err);
     }
 }
 
@@ -179,38 +180,38 @@ NSInteger const RDClassBuilderInvalidNameCode = 260;
 
 - (Class)_buildClass:(nullable Class)cls error:(NSError *_Nullable *_Nullable)error {
     if (cls == Nil)
-        return ECODE(Nil, RDClassBuilderInvalidArgumentCode);
+        return ECODE(RDClassBuilderInvalidArgumentCode);
     
     RDSmoke *smoke = [RDSmoke currentThreadSmoke];
     RDClass *mirror = [smoke mirrorForObjcClass:self.superclass];
     if (mirror == nil)
-        return ECODE(Nil, RDClassBuilderReflectionErrorCode);
+        return ECODE(RDClassBuilderReflectionErrorCode);
   
-    for (RDCBProtocol *protocol in self.protocols) {
-        class_addProtocol(cls, protocol.protocol);
+    for (RDCBIvar *ivar in self.ivars) {
+        RDType *type = ivar.type;
+        RDTypeSize size = type.size;
+        RDTypeAlign alignment = type.alignment;
+        const char *encoding = type.objCTypeEncoding;
+        class_addIvar(cls, ivar.name.UTF8String, size, alignment, encoding);
     }
-    
+
+    for (RDCBMethod *method in self.methods) {
+        IMP imp = method.implementation ?: method.block ? imp_implementationWithBlock(method.block) : nil;
+        if (imp == NULL)
+            return ECODE(RDClassBuilderUnknownErrorCode);
+        class_addMethod(cls, method.selector, imp, method.signature.objcTypeEncoding);
+    }
+
     for (RDCBProperty *property in self.properties) {
         unsigned attributeCount = (unsigned)property.signature.attributesCount;
         objc_property_attribute_t attributes[attributeCount];
         class_addProperty(cls, property.name.UTF8String, attributes, attributeCount);
     }
-    
-    for (RDCBIvar *ivar in self.ivars) {
-        RDType *type = ivar.type;
-        size_t size = type.size;
-        size_t alignment = type.alignment;
-        const char *encoding = type.objCTypeEncoding;
-        class_addIvar(cls, ivar.name.UTF8String, size, alignment, encoding);
+
+    for (RDCBProtocol *protocol in self.protocols) {
+        class_addProtocol(cls, protocol.protocol);
     }
-    
-    for (RDCBMethod *method in self.methods) {
-        IMP imp = method.implementation ?: method.block ? imp_implementationWithBlock(method.block) : nil;
-        if (imp == NULL)
-            return ECODE(Nil, RDClassBuilderUnknownErrorCode);
-        class_addMethod(cls, method.selector, imp, method.signature.objcTypeEncoding);
-    }
-    
+        
     return VALUE(Nil);
 }
 
